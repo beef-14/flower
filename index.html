@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>A Little Bloom &#127800;</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>%F0%9F%8C%B8</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Quicksand:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--hx:160px;--hy:150px;--ease:cubic-bezier(.22,.9,.32,1)}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{min-height:100vh;min-height:100svh;font-family:'Quicksand',system-ui,-apple-system,sans-serif;color:#6d4a63;background:#fbe7f1;overflow-x:hidden}
+.bg{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;background:linear-gradient(155deg,#ffe9f3 0%,#fde6f7 32%,#efe3fb 64%,#fdf0e2 100%)}
+.bg .vignette{position:absolute;inset:0;background:radial-gradient(120% 90% at 50% 38%,transparent 55%,rgba(186,138,172,.16) 100%)}
+.bokeh{position:absolute;left:var(--x);top:0;width:var(--s);height:var(--s);border-radius:50%;background:radial-gradient(circle at 35% 35%,rgba(255,255,255,.95),rgba(255,187,216,.35) 55%,transparent 75%);filter:blur(1px);opacity:var(--o);animation:rise var(--t) linear var(--d) infinite}
+@keyframes rise{from{transform:translate3d(0,110vh,0)}to{transform:translate3d(var(--dx),-12vh,0)}}
+.falling{position:absolute;top:-8vh;left:var(--x);width:var(--s);height:calc(var(--s)*.72);background:linear-gradient(140deg,rgba(255,182,214,.8),rgba(255,224,240,.55));border-radius:80% 10% 80% 10%;opacity:var(--o);animation:fall var(--t) linear var(--d) infinite}
+@keyframes fall{0%{transform:translate3d(0,0,0) rotate(0)}50%{transform:translate3d(var(--sway),55vh,0) rotate(210deg)}100%{transform:translate3d(0,115vh,0) rotate(430deg)}}
+.stage{position:relative;z-index:1;min-height:100vh;min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:clamp(18px,4vh,40px) 20px}
+.flower-wrap{position:relative;display:flex;flex-direction:column;align-items:center}
+.glow{position:absolute;left:50%;top:34%;width:min(70vmin,430px);height:min(70vmin,430px);transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(255,158,205,.55) 0%,rgba(255,190,226,.3) 40%,transparent 70%);filter:blur(4px);opacity:.45;transition:opacity 2.6s var(--ease);pointer-events:none}
+.flower-wrap:hover .glow{opacity:.8}
+body.bloomed .glow{opacity:1}
+.flower-btn{background:none;border:0;padding:14px;border-radius:30px;cursor:pointer;display:block;-webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none;transition:transform .25s var(--ease)}
+.flower-btn:active{transform:scale(.965)}
+.flower-btn:focus-visible{outline:2px dashed rgba(214,120,170,.55);outline-offset:6px}
+.float{animation:floaty 5.2s ease-in-out infinite}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+.pulse{animation:budPulse 2.8s ease-in-out infinite;transition:transform 1.4s var(--ease)}
+@keyframes budPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.045)}}
+body.bloomed .pulse{animation:none;transform:scale(1.08)}
+svg#flower{display:block;width:clamp(240px,64vw,330px);height:auto;transform-origin:50% 96%;animation:sway 7s ease-in-out infinite}
+@keyframes sway{0%,100%{transform:rotate(1.1deg)}50%{transform:rotate(-1.4deg)}}
+.hint{display:inline-block;margin-top:4px;font-size:clamp(.85rem,2.7vw,.98rem);font-weight:500;letter-spacing:.14em;color:#a8698f;opacity:.9;animation:hintPulse 2.4s ease-in-out infinite;transition:opacity .7s,transform .7s}
+@keyframes hintPulse{50%{opacity:.45}}
+body.bloomed .hint{opacity:0;animation:none;transform:translateY(8px);pointer-events:none}
+.stem{stroke-dasharray:320;stroke-dashoffset:0;transition:stroke-dashoffset 1.6s var(--ease)}
+.leaf{transform-origin:center;transform-box:fill-box;animation:leafSway 4.6s ease-in-out infinite}
+.leaf.right{animation-delay:-1.8s}
+@keyframes leafSway{0%,100%{transform:rotate(1.5deg)}50%{transform:rotate(-2.5deg)}}
+.petal{transform-origin:var(--hx) var(--hy);transform:translate(var(--tx),var(--ty)) rotate(var(--a)) scale(var(--closed));transition:transform 1.5s var(--ease);transition-delay:var(--d)}
+body.bloomed .petal{transform:translate(0,0) rotate(var(--a)) scale(var(--open))}
+.sepal{transform-origin:var(--hx) var(--hy);transform:rotate(var(--closed-a)) scaleY(.62);transition:transform 1.7s var(--ease);transition-delay:var(--d)}
+body.bloomed .sepal{transform:rotate(var(--open-a)) scaleY(1)}
+.budtip{transform-origin:var(--hx) var(--hy);transform:scale(1);transition:transform .9s var(--ease),opacity .6s var(--ease)}
+body.bloomed .budtip{transform:scale(0);opacity:0}
+.center{transform-origin:var(--hx) var(--hy);transform:scale(0);transition:transform 1.1s cubic-bezier(.34,1.56,.64,1) 1.5s}
+body.bloomed .center{transform:scale(1)}
+body.done .petal{animation:petalBreathe 6.5s ease-in-out calc(var(--d) * 3) infinite}
+@keyframes petalBreathe{0%,100%{transform:translate(0,0) rotate(var(--a)) scale(var(--open))}50%{transform:translate(0,0) rotate(var(--a)) scale(calc(var(--open) * 1.03))}}
+.burst{position:absolute;left:50%;top:34%;width:0;height:0;pointer-events:none}
+.spark{position:absolute;left:0;top:0;width:var(--sz);height:var(--sz);border-radius:50%;background:radial-gradient(circle,#fff,var(--c) 60%,transparent 75%);transform:translate(-50%,-50%) scale(.2);opacity:0;animation:spark 1.5s var(--ease) forwards}
+@keyframes spark{0%{opacity:0;transform:translate(-50%,-50%) scale(.2)}18%{opacity:1}100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(1)}}
+.ring{position:absolute;left:0;top:0;width:40px;height:40px;border-radius:50%;border:2px solid rgba(255,255,255,.85);transform:translate(-50%,-50%);animation:ring 1.4s var(--ease) forwards}
+@keyframes ring{to{opacity:0;transform:translate(-50%,-50%) scale(9)}}
+.message{max-width:36rem;margin:clamp(6px,2vh,16px) auto 0;padding:0 8px;font-family:'Cormorant Garamond',Georgia,'Times New Roman',serif;font-weight:500;font-size:clamp(1.05rem,3.4vw,1.45rem);line-height:1.65;color:#7a4d67;opacity:0;filter:blur(12px);transform:translateY(20px);transition:opacity 2.4s var(--ease) 2.2s,filter 2.4s var(--ease) 2.2s,transform 2.4s var(--ease) 2.2s}
+.message p + p{margin-top:.7em}
+body.bloomed .message{opacity:1;filter:blur(0);transform:translateY(0)}
+.replay{margin-top:clamp(10px,2.4vh,20px);background:rgba(255,255,255,.55);border:1px solid rgba(214,140,180,.4);color:#a05a82;font-family:inherit;font-size:.82rem;font-weight:600;letter-spacing:.08em;padding:9px 20px;border-radius:999px;cursor:pointer;opacity:0;pointer-events:none;transform:translateY(8px);transition:opacity 1s ease 3.6s,transform 1s ease 3.6s,background .25s;-webkit-tap-highlight-color:transparent}
+body.done .replay{opacity:.85;pointer-events:auto;transform:translateY(0)}
+.replay:hover{background:rgba(255,255,255,.9);opacity:1}
+@media (max-height:680px){svg#flower{width:clamp(200px,46vh,280px)}.message{font-size:clamp(.98rem,3vw,1.25rem)}}
+
+/* ===================== second surprise: envelope + letter ===================== */
+:root{--script:'Segoe Script','Bradley Hand','Snell Roundhand','Brush Script MT',cursive;--paper:#fffdf7;--paper-2:#f7efe2;--ink:#6a4658;--seal:#e0577f;--letter-max:560px}
+.surprise{position:fixed;inset:0;z-index:5;display:grid;grid-template-rows:1fr auto;place-items:center;row-gap:clamp(10px,2.2vh,18px);overflow:hidden;padding:max(20px,env(safe-area-inset-top)) 16px max(20px,env(safe-area-inset-bottom));--voice-h:clamp(104px,17vh,128px)}
+.surprise[hidden]{display:none}
+.veil{position:absolute;inset:0;background:radial-gradient(125% 90% at 50% 42%,rgba(255,240,247,.30) 0%,rgba(255,232,242,.60) 45%,rgba(150,74,116,.30) 100%);opacity:0;transition:opacity 1.2s var(--ease)}
+body.envelope .veil,body.letter .veil{opacity:1}
+body.letter .veil{background:radial-gradient(125% 90% at 50% 42%,rgba(255,243,249,.50) 0%,rgba(255,235,244,.74) 45%,rgba(140,70,110,.32) 100%)}
+.floaters{position:absolute;inset:0;z-index:2;pointer-events:none;overflow:hidden}
+.floater{position:absolute;left:var(--x);bottom:-8%;width:var(--s);height:calc(var(--s)*.78);background:linear-gradient(140deg,rgba(255,178,210,.9),rgba(255,226,241,.6));border-radius:80% 10% 80% 10%;opacity:0;animation:floaterDrift var(--t) ease-out var(--d) forwards}
+.floater.heart{border-radius:0;height:auto;background:none;color:var(--seal);font-size:var(--s);line-height:1;text-align:center}
+@keyframes floaterDrift{0%{opacity:0;transform:translate3d(0,0,0) rotate(0deg) scale(.7)}12%{opacity:var(--o)}100%{opacity:0;transform:translate3d(var(--dx),var(--dy),0) rotate(var(--rot)) scale(1)}}
+.flower-wrap{transition:filter 1.3s var(--ease),opacity 1.3s var(--ease),transform 1.5s var(--ease)}
+body.envelope .flower-wrap{filter:blur(5px) saturate(.92);opacity:.5;transform:scale(.94)}
+body.letter .flower-wrap{filter:blur(9px) saturate(.8);opacity:.28;transform:scale(.9)}
+body.envelope .message,body.envelope .replay,body.envelope .hint{opacity:0 !important;transform:translateY(10px) !important;pointer-events:none;transition:opacity .6s var(--ease) 0s,transform .6s var(--ease) 0s !important}
+body.back .message,body.back .replay,body.back .hint{transition-delay:0s !important;transition-duration:.7s !important}
+body.envelope,body.letter{overflow:hidden}
+/* --- envelope stage --- */
+.env-stage{grid-area:1/1;position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;text-align:center;opacity:0;transform:scale(.9) translateY(16px);transition:opacity 1s var(--ease),transform 1.1s var(--ease),visibility 0s}
+body.envelope .env-stage,body.opening .env-stage,body.out .env-stage{opacity:1;transform:none}
+body.letter .env-stage{opacity:0;transform:translateY(-14px) scale(.98);visibility:hidden;transition:opacity .7s var(--ease),transform .9s var(--ease),visibility 0s .7s}
+.env-title,.env-hint{opacity:0;transform:translateY(12px);transition:opacity 1.1s var(--ease) .3s,transform 1.1s var(--ease) .3s}
+.env-title{font-family:var(--script);font-weight:400;font-size:clamp(1.35rem,4.6vw,1.95rem);color:#8d3f6c;margin-bottom:clamp(16px,3.4vh,28px)}
+.env-hint{margin-top:clamp(14px,2.8vh,22px);font-size:clamp(.78rem,2.6vw,.86rem);font-weight:500;letter-spacing:.16em;color:#a8698f}
+body.envelope .env-title{opacity:1;transform:none}
+body.envelope .env-hint{opacity:.85;transform:none}
+body.opening .env-title,body.out .env-title{opacity:1;transform:none}
+body.opening .env-hint,body.out .env-hint,body.letter .env-hint{opacity:0;transform:translateY(6px)}
+.env-glow{position:absolute;left:50%;top:46%;width:min(78vmin,470px);height:min(78vmin,470px);transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(255,170,212,.42) 0%,rgba(255,205,232,.22) 42%,transparent 72%);filter:blur(6px);opacity:.35;pointer-events:none;transition:opacity 1.4s var(--ease)}
+body.envelope .env-glow,body.opening .env-glow{opacity:.75}
+body.out .env-glow,body.letter .env-glow{opacity:1}
+
+.env-float{animation:envFloat 5.4s ease-in-out infinite}
+@keyframes envFloat{50%{transform:translateY(-10px)}}
+body.opening .env-float,body.out .env-float{animation:none}
+.env{position:relative;display:block;width:clamp(210px,62vw,300px);aspect-ratio:3/2;background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;perspective:900px;filter:drop-shadow(0 16px 30px rgba(150,90,120,.22));transition:transform .5s var(--ease),filter .5s var(--ease),opacity .6s var(--ease)}
+.env:hover,.env:focus-visible{transform:translateY(-6px) scale(1.03) rotate(-1.2deg);filter:drop-shadow(0 22px 38px rgba(150,90,120,.3))}
+.env:active{transform:translateY(-2px) scale(.995) rotate(-.6deg)}
+.env:focus-visible{outline:2px dashed rgba(214,120,170,.55);outline-offset:8px}
+body.opening .env{transform:scale(1.06);pointer-events:none}
+body.out .env{pointer-events:none}
+body.letter .env{opacity:.2;transform:translateY(16px) scale(1.02);pointer-events:none}
+.env-back{position:absolute;inset:0;border-radius:12px;background:linear-gradient(160deg,var(--paper) 0%,#fdf6ea 58%,var(--paper-2) 100%);box-shadow:0 14px 30px rgba(150,90,120,.22),0 2px 6px rgba(150,90,120,.12),inset 0 0 0 1px rgba(214,170,190,.5)}
+.env-sheet{position:absolute;left:9%;right:9%;top:10%;height:70%;z-index:2;border-radius:8px 8px 3px 3px;background:linear-gradient(180deg,#fffefb,#fbf4e8);box-shadow:0 6px 16px rgba(150,90,120,.18);transform:translateY(14%) scale(.96);transition:transform 1.15s var(--ease)}
+body.opening .env-sheet{transform:translateY(6%) scale(.97)}
+body.out .env-sheet{transform:translateY(-32%) scale(1)}
+.env-fold{position:absolute;inset:0;z-index:3;border-radius:12px}
+.env-fold::before{content:"";position:absolute;inset:0;border-radius:12px}
+.env-fold.left::before{background:linear-gradient(90deg,#fdf7ec,#f6eddf);clip-path:polygon(0 0,52% 100%,0 100%)}
+.env-fold.right::before{background:linear-gradient(270deg,#fdf7ec,#f6eddf);clip-path:polygon(100% 0,100% 100%,48% 100%)}
+.env-fold.front::before{background:linear-gradient(180deg,#fffdf7,#f7efe2);clip-path:polygon(0 100%,0 54%,50% 16%,100% 54%,100% 100%)}
+.env-flap{position:absolute;left:0;right:0;top:0;height:72%;z-index:4;border-radius:12px 12px 4px 4px;background:linear-gradient(180deg,#fffefb 0%,#fdf7ec 62%,#f5ebdb 100%);clip-path:polygon(0 0,100% 0,50% 100%);transform-origin:top center;transform:rotateX(0deg);transition:transform 1s var(--ease) .28s,background .8s var(--ease),box-shadow 1s var(--ease);box-shadow:0 4px 10px rgba(150,90,120,.12)}
+body.opening .env-flap,body.out .env-flap{transform:rotateX(-176deg);background:linear-gradient(180deg,#fbf3e6 0%,#fdf8ef 60%,#fffdf8 100%);box-shadow:0 10px 22px rgba(150,90,120,.16)}
+.env-heart{position:absolute;left:50%;top:72%;z-index:5;width:clamp(20px,6.4vw,27px);height:clamp(20px,6.4vw,27px);transform:translate(-50%,-50%) rotate(-45deg);background:var(--seal);border-radius:12%;filter:drop-shadow(0 3px 7px rgba(180,60,100,.42));transition:opacity .5s var(--ease),transform .5s var(--ease)}
+.env-heart::before,.env-heart::after{content:"";position:absolute;width:100%;height:100%;background:inherit;border-radius:50%}
+.env-heart::before{top:-50%;left:0}
+.env-heart::after{top:0;left:50%}
+body.opening .env-heart,body.out .env-heart{opacity:0;transform:translate(-50%,-50%) rotate(-45deg) scale(.35)}
+/* --- letter stage --- */
+.letter-stage{grid-area:1/1;align-self:stretch;justify-self:stretch;z-index:3;display:grid;place-items:center;opacity:0;visibility:hidden;transform:scale(.94) translateY(12px);pointer-events:none;transition:opacity .9s var(--ease),transform 1s var(--ease),visibility 0s .9s}
+body.letter .letter-stage{opacity:1;visibility:visible;transform:none;pointer-events:auto;transition-delay:0s}
+.letter-card{position:relative;width:min(var(--letter-max),92vw);max-height:min(72svh,calc(100svh - var(--voice-h) - 64px));display:flex;flex-direction:column;border-radius:16px;padding:clamp(20px,5vw,38px) clamp(18px,4.6vw,36px) clamp(18px,4vw,30px);text-align:left;color:var(--ink);background:radial-gradient(rgba(214,170,190,.09) 1px,transparent 1px) 0 0/7px 7px,radial-gradient(rgba(255,255,255,.5) 1px,transparent 1px) 3px 4px/9px 9px,linear-gradient(165deg,#fffdf7 0%,#fdf6ea 54%,#f8efdf 100%);box-shadow:0 24px 60px rgba(140,80,110,.28),0 3px 10px rgba(140,80,110,.14),inset 0 0 0 1px rgba(220,180,200,.45)}
+.letter-head{display:flex;justify-content:center;margin-bottom:clamp(6px,1.6vh,14px);flex:0 0 auto}
+.letter-head svg{width:clamp(24px,6.4vw,30px);height:auto;filter:drop-shadow(0 3px 6px rgba(200,90,130,.28))}
+.letter-scroll{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;min-height:0;flex:1 1 auto;padding-right:8px;scrollbar-width:thin;scrollbar-color:rgba(214,140,180,.5) transparent}
+.letter-scroll::-webkit-scrollbar{width:6px}
+.letter-scroll::-webkit-scrollbar-thumb{background:rgba(214,140,180,.45);border-radius:99px}
+.letter-scroll::-webkit-scrollbar-track{background:transparent}
+.letter-body{font-family:'Cormorant Garamond',Georgia,'Times New Roman',serif;font-weight:500;font-size:clamp(1.02rem,2.9vw,1.18rem);line-height:1.72;overflow-wrap:anywhere}
+.letter-body p+p{margin-top:.72em}
+.letter-heading{font-family:var(--script);font-size:clamp(1.25rem,4.2vw,1.6rem);line-height:1.35;color:#8d3f6c;margin-bottom:.5em}
+.letter-wish{font-style:italic;color:#8a5f78}
+.letter-closing{margin-top:1.15em}
+.letter-sign{font-family:var(--script);font-size:clamp(1.5rem,5vw,1.85rem);line-height:1.4;color:#963f6f;margin-top:.15em}
+.letter-finale{font-family:var(--script);font-size:clamp(1.3rem,4.6vw,1.7rem);line-height:1.4;color:#c0396b;text-align:center;margin-top:1.3em}
+.letter-body>*{opacity:1}
+body.letter .letter-body>*{animation:letterIn .95s var(--ease) both;animation-delay:calc(var(--i,0) * .1s)}
+@keyframes letterIn{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:none}}
+.letter-close{position:absolute;top:10px;right:10px;width:44px;height:44px;display:grid;place-items:center;border:0;border-radius:50%;background:rgba(255,255,255,.6);color:#a8698f;font-size:1.05rem;line-height:1;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;opacity:0;pointer-events:none;transition:opacity .8s var(--ease) .6s,background .25s,transform .25s}
+body.letter .letter-close{opacity:.9;pointer-events:auto}
+.letter-close:hover{background:#fff;transform:rotate(90deg)}
+.letter-close:focus-visible{outline:2px dashed rgba(214,120,170,.55);outline-offset:2px}
+/* --- 🎙️ Ken's voice message: the tap target that sits under the envelope --- */
+.voice-audio{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;border:0}
+.voice-player{grid-area:2/1;position:relative;z-index:4;justify-self:center;width:min(430px,92vw);min-width:0;max-width:100%;display:flex;flex-direction:column;align-items:center;gap:clamp(5px,1.1vh,9px);padding:clamp(9px,1.8vh,13px) clamp(12px,3vw,18px);border-radius:18px;background:linear-gradient(160deg,rgba(255,253,247,.88),rgba(253,241,232,.78));box-shadow:0 10px 26px rgba(150,90,120,.16),inset 0 0 0 1px rgba(226,182,206,.55);backdrop-filter:blur(3px);opacity:0;pointer-events:none;transform:translateY(14px);transition:opacity .9s var(--ease) .5s,transform 1s var(--ease) .5s,box-shadow .5s var(--ease)}
+body.envelope .voice-player,body.opening .voice-player,body.out .voice-player,body.letter .voice-player{opacity:1;pointer-events:auto;transform:none}
+.voice-player.is-playing{box-shadow:0 14px 34px rgba(224,87,127,.26),0 0 0 1px rgba(224,87,127,.34),inset 0 0 0 1px rgba(255,255,255,.6)}
+.voice-btn{display:flex;align-items:center;gap:8px;min-height:44px;max-width:100%;padding:9px 17px;border:0;border-radius:999px;background:linear-gradient(155deg,#fdeef5,#f9dce9);color:#93406e;font-family:inherit;font-size:clamp(.84rem,2.9vw,.95rem);font-weight:600;letter-spacing:.01em;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;box-shadow:0 6px 16px rgba(198,96,140,.22),inset 0 0 0 1px rgba(255,255,255,.7);transition:transform .28s var(--ease),box-shadow .3s var(--ease),background .3s var(--ease)}
+.voice-btn:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(198,96,140,.28),inset 0 0 0 1px rgba(255,255,255,.8)}
+.voice-btn:active{transform:scale(.965)}
+.voice-btn:focus-visible{outline:2px dashed rgba(214,120,170,.6);outline-offset:3px}
+.voice-label{overflow-wrap:anywhere}
+.voice-player.is-playing .voice-btn{animation:voiceGlow 2.1s ease-in-out infinite}
+@keyframes voiceGlow{50%{box-shadow:0 12px 26px rgba(224,87,127,.32),0 0 0 6px rgba(224,87,127,.09),inset 0 0 0 1px rgba(255,255,255,.85)}}
+.voice-mic{display:grid;place-items:center;flex:0 0 auto;width:21px;height:21px;color:#c8507f}
+.voice-mic svg{display:block;width:100%;height:100%}
+.voice-track{display:flex;align-items:center;gap:8px;width:100%;min-width:0}
+.voice-bar{position:relative;flex:1 1 auto;min-width:0;height:5px;border-radius:99px;background:rgba(214,150,185,.26);overflow:hidden}
+.voice-fill{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:99px;background:linear-gradient(90deg,#f3aacb,#e0577f);transition:width .15s linear}
+.voice-time{flex:0 0 auto;font-variant-numeric:tabular-nums;font-size:.72rem;letter-spacing:.02em;color:#a8698f}
+.voice-foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px 8px;min-width:0;margin:0;font-size:clamp(.72rem,2.5vw,.79rem);color:#a8698f}
+.voice-bars{display:flex;align-items:flex-end;gap:2px;flex:0 0 auto;height:15px;opacity:.4;transition:opacity .4s var(--ease)}
+.voice-player.is-playing .voice-bars{opacity:1}
+.voice-bars i{display:block;width:3px;height:40%;border-radius:2px;background:linear-gradient(180deg,#f4a8c8,#d8557f);transform-origin:50% 100%}
+.voice-bars i:nth-child(2){height:85%}
+.voice-bars i:nth-child(3){height:62%}
+.voice-bars i:nth-child(4){height:35%}
+.voice-player.is-playing .voice-bars i{animation:voiceBar .95s ease-in-out infinite}
+.voice-player.is-playing .voice-bars i:nth-child(2){animation-delay:.15s}
+.voice-player.is-playing .voice-bars i:nth-child(3){animation-delay:.3s}
+.voice-player.is-playing .voice-bars i:nth-child(4){animation-delay:.45s}
+@keyframes voiceBar{0%,100%{transform:scaleY(.45)}50%{transform:scaleY(1)}}
+.voice-status{min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.voice-player.is-missing .voice-btn{background:linear-gradient(155deg,#fbf6f8,#f2e7ee);color:#a3809a;box-shadow:0 4px 12px rgba(180,140,165,.16),inset 0 0 0 1px rgba(230,205,222,.6)}
+.voice-player.is-missing .voice-bars{opacity:0}
+@media (max-width:400px){.voice-player{padding:8px 12px;gap:5px;border-radius:14px}.voice-btn{padding:8px 14px;gap:7px}.voice-mic{width:18px;height:18px}}
+@media (max-height:680px){.voice-player{padding-top:8px;padding-bottom:8px}}
+
+@media (max-width:560px){.letter-card{border-radius:14px}.env-title{margin-bottom:14px}.letter-body{font-size:clamp(.99rem,3.9vw,1.08rem)}}
+@media (max-height:680px){.letter-card{max-height:min(68svh,calc(100svh - var(--voice-h) - 72px));padding-top:clamp(16px,4vw,26px)}.env-title{font-size:clamp(1.15rem,3.4vh,1.6rem);margin-bottom:10px}.env-hint{margin-top:10px}}
+@media (prefers-reduced-motion:reduce){body.letter .letter-body>*{opacity:1;animation:none;transform:none}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none !important;transition-duration:.2s !important;transition-delay:0s !important}}
+</style>
+</head>
+<body>
+<div class="bg" id="bg"><div class="vignette"></div></div>
+<main class="stage">
+  <div class="flower-wrap">
+    <div class="glow"></div>
+    <div class="burst" id="burst"></div>
+    <div class="float">
+      <div class="pulse" id="pulse">
+        <button class="flower-btn" id="bloom" aria-label="Tap the flower to make it bloom">
+          <svg id="flower" viewBox="0 0 320 440" role="img" aria-hidden="true">
+            <defs>
+              <linearGradient id="stemGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#6fbf6a"/>
+                <stop offset="1" stop-color="#3d8a4a"/>
+              </linearGradient>
+              <linearGradient id="leafGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#8fd184"/>
+                <stop offset="1" stop-color="#3f8d49"/>
+              </linearGradient>
+              <radialGradient id="p0" cx="50%" cy="78%" r="62%">
+                <stop offset="0" stop-color="#fff6fb"/>
+                <stop offset=".45" stop-color="#ffc2dc"/>
+                <stop offset="1" stop-color="#f0629a"/>
+              </radialGradient>
+              <radialGradient id="p1" cx="50%" cy="78%" r="62%">
+                <stop offset="0" stop-color="#fff8fc"/>
+                <stop offset=".5" stop-color="#ffd0e4"/>
+                <stop offset="1" stop-color="#ee7eae"/>
+              </radialGradient>
+              <radialGradient id="p2" cx="50%" cy="78%" r="62%">
+                <stop offset="0" stop-color="#fffdf8"/>
+                <stop offset=".5" stop-color="#ffe0b8"/>
+                <stop offset="1" stop-color="#f7a3c4"/>
+              </radialGradient>
+              <radialGradient id="p3" cx="50%" cy="78%" r="62%">
+                <stop offset="0" stop-color="#ffffff"/>
+                <stop offset=".55" stop-color="#ffe9f2"/>
+                <stop offset="1" stop-color="#f8bdd4"/>
+              </radialGradient>
+              <radialGradient id="centerGrad" cx="40%" cy="38%" r="70%">
+                <stop offset="0" stop-color="#fff3c4"/>
+                <stop offset=".55" stop-color="#f2b23a"/>
+                <stop offset="1" stop-color="#d9842a"/>
+              </radialGradient>
+              <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
+                <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#c46a96" flood-opacity=".28"/>
+              </filter>
+            </defs>
+            <g id="stemGroup">
+              <path class="stem" d="M160 150 C 160 165, 160 180, 160 196 C 162 250, 150 300, 158 400" fill="none" stroke="url(#stemGrad)" stroke-width="7" stroke-linecap="round"/>
+              <g class="leaf" transform="translate(0,4)">
+                <path d="M156 292 C 112 274, 74 286, 58 304 C 96 312, 134 316, 158 306 Z" fill="url(#leafGrad)"/>
+                <path d="M156 296 C 112 292, 80 300, 64 306" fill="none" stroke="#3d8a4a" stroke-width="1.1" opacity=".6"/>
+              </g>
+              <g class="leaf right">
+                <path d="M155 332 C 206 312, 250 322, 268 342 C 228 352, 190 356, 153 346 Z" fill="url(#leafGrad)"/>
+                <path d="M157 336 C 208 332, 244 340, 262 346" fill="none" stroke="#3d8a4a" stroke-width="1.1" opacity=".6"/>
+              </g>
+            </g>
+            <g id="petals" filter="url(#softShadow)"></g>
+            <g id="sepals"></g>
+            <path class="budtip" d="M160 78 C 149 92, 148 108, 160 122 C 172 108, 171 92, 160 78 Z" fill="url(#p1)" filter="url(#softShadow)"/>
+            <g class="center" id="center">
+              <circle cx="160" cy="150" r="20" fill="url(#centerGrad)"/>
+              <g fill="#e08a22" opacity=".8">
+                <circle cx="153" cy="145" r="1.6"/>
+                <circle cx="166" cy="143" r="1.5"/>
+                <circle cx="160" cy="154" r="1.6"/>
+                <circle cx="169" cy="156" r="1.3"/>
+                <circle cx="151" cy="156" r="1.3"/>
+                <circle cx="160" cy="140" r="1.2"/>
+              </g>
+              <circle cx="154" cy="144" r="5" fill="#fff" opacity=".35"/>
+            </g>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <p class="hint" id="hint">tap the flower &#127800;</p>
+  </div>
+  <div class="message" id="message" aria-live="polite">
+    <p>Just like this flower, I hope this little surprise makes your day a little brighter. &#127800;</p>
+    <p>You deserve beautiful things, beautiful moments, and all the love in the world. &#10084;&#65039;</p>
+  </div>
+  <button class="replay" id="replay" type="button" hidden>Bloom Again 🌸</button>
+</main>
+
+<!-- ============ ✏️ EDIT THE LETTER HERE — this is the only place the text lives ============ -->
+<script>
+/* 🎙️ KEN'S VOICE MESSAGE — the recording the "Play a VM from Ken" button plays.
+   The path is relative to this file, so it works when you double-click index.html and on
+   any host. Drop your recording at  public/audio/ken-voice-message.mp3  and you are done:
+   replace the FILE, keep the name — nothing in this file needs to be edited. */
+window.VOICE_MESSAGE_AUDIO = "public/audio/ken-voice-message.mp3";
+
+window.LETTER = {
+  /* button under the first message */
+  bloomAgainLabel: "Bloom Again 🌸",
+  /* envelope screen */
+  envelopeTitle: "One more thing for you... 💌",
+  tapHint: "Tap the envelope",
+  /* the letter itself — one string per paragraph */
+  heading: "Hellloooo bebeee,",
+  paragraphs: [
+    "I know this is just a little virtual flower, but I wanted to make something special for you.",
+    "If I could, I would give you a real flower and a handwritten letter myself. Since I can't put those things directly on this screen, I made this little surprise for you instead.",
+    "I hope whenever you see this, you remember how special you are to me.",
+    "Thank you for being you, for being part of my life, and for all the little moments that mean more to me than you probably realize.",
+    "I love you more than words can explain."
+  ],
+  wish: "my wish from you that all your dreams will come true",
+  closing: "Always yours,",
+  signature: "KEN ❤️",
+  finale: "HAPPY BIRTHDAY BEBE!",
+  /* 🎙️ the voice message button under the envelope */
+  voice: {
+    label: "Play a VM from Ken",
+    playingLabel: "Pause Voice Message",
+    pausedLabel: "Resume Voice Message",
+    statusIdle: "Press play to hear my voice",
+    statusPlaying: "Playing Ken's message...",
+    caption: "Ken is talking to you",
+    statusPaused: "Paused — press play to keep listening",
+    statusEnded: "That was from me to you",
+    statusMissing: "Ken's voice message isn't uploaded yet",
+    statusBlocked: "Tap play once more to hear it"
+  }
+};
+</script>
+
+<!-- ============ second surprise: envelope + letter (opened by "Bloom Again") ============ -->
+<div class="surprise" id="surprise" role="dialog" aria-modal="true" aria-labelledby="envTitle" hidden>
+  <div class="veil"></div>
+  <div class="floaters" id="floaters" aria-hidden="true"></div>
+  <div class="env-stage" id="envStage">
+    <div class="env-glow" aria-hidden="true"></div>
+    <h2 class="env-title" id="envTitle">One more thing for you... 💌</h2>
+    <div class="env-float">
+      <button class="env" id="envelope" type="button" aria-label="Open the envelope">
+        <span class="env-back" aria-hidden="true"></span>
+        <span class="env-sheet" aria-hidden="true"></span>
+        <span class="env-fold left" aria-hidden="true"></span>
+        <span class="env-fold right" aria-hidden="true"></span>
+        <span class="env-fold front" aria-hidden="true"></span>
+        <span class="env-flap" aria-hidden="true"></span>
+        <span class="env-heart" aria-hidden="true"></span>
+      </button>
+    </div>
+    <p class="env-hint" id="envHint">Tap the envelope</p>
+  </div>
+  <div class="letter-stage" id="letterStage">
+    <article class="letter-card" id="letterCard" aria-label="A letter for you">
+      <span class="letter-head" aria-hidden="true">
+        <svg viewBox="0 0 32 30" role="presentation"><path d="M16 28C16 28 2 20 2 10.5 2 5.8 5.8 2 10.5 2 13.2 2 15.2 3.4 16 5.2 16.8 3.4 18.8 2 21.5 2 26.2 2 30 5.8 30 10.5 30 20 16 28 16 28Z" fill="#e0577f"/></svg>
+      </span>
+      <div class="letter-scroll" id="letterScroll">
+        <div class="letter-body" id="letterBody" tabindex="0"></div>
+      </div>
+      <button class="letter-close" id="letterClose" type="button" aria-label="Close the letter">&#10005;</button>
+    </article>
+  </div>
+
+  <!-- 🎙️ her voice message: sits under the envelope, on both the envelope and letter screens -->
+  <section class="voice-player" id="voicePlayer" aria-label="A voice message from Ken">
+    <button class="voice-btn" id="voiceBtn" type="button" aria-pressed="false" aria-describedby="voiceStatus">
+      <span class="voice-mic" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"/><path d="M12 18v3.5"/></svg>
+      </span>
+      <span class="voice-label" id="voiceLabel">Play a VM from Ken 🎙️❤️</span>
+    </button>
+    <div class="voice-track">
+      <span class="voice-bar" id="voiceBar" role="progressbar" aria-label="How much of the voice message has played" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span class="voice-fill" id="voiceFill"></span></span>
+      <span class="voice-time"><span id="voiceNow">0:00</span> / <span id="voiceTotal">--:--</span></span>
+    </div>
+    <p class="voice-foot">
+      <span class="voice-bars" id="voiceBars" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+      <span class="voice-status" id="voiceStatus" aria-live="polite">Press play to hear my voice ❤️</span>
+    </p>
+  </section>
+</div>
+<script>
+(function () {
+  "use strict";
+  var HX = 160, HY = 150;
+  var petals = document.getElementById("petals");
+  var sepals = document.getElementById("sepals");
+  var ns = "http://www.w3.org/2000/svg";
+
+  var layers = [
+    { count: 8, len: 118, w: 34, open: 1,    closed: .12, shift: 2,  fill: "url(#p0)", delay: 0 },
+    { count: 8, len: 96,  w: 30, open: .78,  closed: .11, shift: 22, fill: "url(#p1)", delay: .18 },
+    { count: 7, len: 74,  w: 26, open: .58,  closed: .1,  shift: 10, fill: "url(#p2)", delay: .36 },
+    { count: 6, len: 54,  w: 22, open: .4,   closed: .09, shift: 30, fill: "url(#p3)", delay: .52 }
+  ];
+
+  layers.forEach(function (layer, li) {
+    for (var i = 0; i < layer.count; i++) {
+      var angle = layer.shift + (360 / layer.count) * i;
+      var p = document.createElementNS(ns, "path");
+      var L = layer.len, W = layer.w;
+      p.setAttribute("d",
+        "M" + HX + " " + HY +
+        " C " + (HX - W) + " " + (HY - L * .45) + ", " +
+        (HX - W * .55) + " " + (HY - L) + ", " +
+        HX + " " + (HY - L) +
+        " C " + (HX + W * .55) + " " + (HY - L) + ", " +
+        (HX + W) + " " + (HY - L * .45) + ", " +
+        HX + " " + HY + " Z");
+      p.setAttribute("fill", layer.fill);
+      p.setAttribute("class", "petal");
+      p.style.setProperty("--a", angle + "deg");
+      p.style.setProperty("--open", layer.open);
+      p.style.setProperty("--closed", layer.closed);
+      p.style.setProperty("--tx", "0px");
+      p.style.setProperty("--ty", (li === 0 ? -6 : -12) + "px");
+      p.style.setProperty("--d", (layer.delay + i * .045) + "s");
+      petals.appendChild(p);
+    }
+  });
+
+  for (var s = 0; s < 6; s++) {
+    var sp = document.createElementNS(ns, "path");
+    var sign = s % 2 === 0 ? 1 : -1;
+    var spread = 3 + s * 3;
+    sp.setAttribute("d",
+      "M" + HX + " " + (HY + 6) +
+      " C " + (HX - 13) + " " + (HY - 30) + ", " +
+      (HX - 9) + " " + (HY - 78) + ", " +
+      HX + " " + (HY - 96) +
+      " C " + (HX + 9) + " " + (HY - 78) + ", " +
+      (HX + 13) + " " + (HY - 30) + ", " +
+      HX + " " + (HY + 6) + " Z");
+    sp.setAttribute("fill", s < 3 ? "#5fa85a" : "#7cc274");
+    sp.setAttribute("class", "sepal");
+    sp.style.setProperty("--closed-a", (sign * spread) + "deg");
+    sp.style.setProperty("--open-a", (sign * (24 + s * 21)) + "deg");
+    sp.style.setProperty("--d", (s * .04) + "s");
+    sepals.appendChild(sp);
+  }
+
+  var bg = document.getElementById("bg");
+  function spawn(cls, vars) {
+    var el = document.createElement("span");
+    el.className = cls;
+    Object.keys(vars).forEach(function (k) { el.style.setProperty(k, vars[k]); });
+    bg.appendChild(el);
+  }
+  for (var b = 0; b < 16; b++) {
+    spawn("bokeh", {
+      "--x": Math.random() * 100 + "%",
+      "--s": (10 + Math.random() * 34) + "px",
+      "--t": (16 + Math.random() * 22) + "s",
+      "--d": (-Math.random() * 30) + "s",
+      "--dx": (Math.random() * 80 - 40) + "px",
+      "--o": (.25 + Math.random() * .45).toFixed(2)
+    });
+  }
+  for (var f = 0; f < 7; f++) {
+    spawn("falling", {
+      "--x": Math.random() * 100 + "%",
+      "--s": (9 + Math.random() * 9) + "px",
+      "--t": (13 + Math.random() * 12) + "s",
+      "--d": (-Math.random() * 20) + "s",
+      "--sway": (Math.random() * 90 - 45) + "px",
+      "--o": (.35 + Math.random() * .4).toFixed(2)
+    });
+  }
+
+  var state = "bud";
+  var bloomBtn = document.getElementById("bloom");
+  var replayBtn = document.getElementById("replay");
+  var burst = document.getElementById("burst");
+  var colors = ["#ffd1e6", "#ffe9c7", "#ffffff", "#ffb3d4", "#f7c6ff"];
+
+  /* ================= second surprise: envelope + letter ================= */
+  var L = window.LETTER || {};
+  function cfg(key, fallback) {
+    var v = L[key];
+    return (typeof v === "string" && v) ? v : fallback;
+  }
+  var stage = document.querySelector(".stage");
+  var surprise = document.getElementById("surprise");
+  var envelopeBtn = document.getElementById("envelope");
+  var envTitle = document.getElementById("envTitle");
+  var envHint = document.getElementById("envHint");
+  var floaters = document.getElementById("floaters");
+  var letterScroll = document.getElementById("letterScroll");
+  var letterBody = document.getElementById("letterBody");
+  var letterClose = document.getElementById("letterClose");
+
+  var reduced = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  function ms(v) { return reduced ? Math.round(v * .3) : v; }
+  var timers = [], hideToken = 0;
+  function later(delay, fn) { timers.push(setTimeout(fn, ms(delay))); }
+  function clearTimers() { timers.forEach(clearTimeout); timers = []; }
+  function setStageInert(on) {
+    if ("inert" in stage) stage.inert = on;
+    if (on) stage.setAttribute("aria-hidden", "true");
+    else stage.removeAttribute("aria-hidden");
+  }
+  function floaterCount(base) { return window.innerWidth < 560 ? base - 3 : base; }
+
+  /* everything on the two screens comes from the LETTER config above */
+  replayBtn.textContent = cfg("bloomAgainLabel", "Bloom Again \uD83C\uDF38");
+  envTitle.textContent = cfg("envelopeTitle", "One more thing for you...");
+  envHint.textContent = cfg("tapHint", "Tap the envelope");
+  (function buildLetter() {
+    function add(cls, text) {
+      if (!text) return;
+      var p = document.createElement("p");
+      p.className = cls;
+      p.textContent = text;
+      letterBody.appendChild(p);
+    }
+    add("letter-heading", cfg("heading", ""));
+    var paras = (L.paragraphs && L.paragraphs.length) ? L.paragraphs : [];
+    paras.forEach(function (text) { add("", text); });
+    add("letter-wish", cfg("wish", ""));
+    add("letter-closing", cfg("closing", ""));
+    add("letter-sign", cfg("signature", ""));
+    add("letter-finale", cfg("finale", ""));
+    for (var i = 0; i < letterBody.children.length; i++) letterBody.children[i].style.setProperty("--i", i);
+  })();
+
+  function spawnFloaters(count) {
+    var marks = ["\u2665", "\u2764\uFE0F"];
+    for (var i = 0; i < count; i++) {
+      var el = document.createElement("span");
+      var heart = Math.random() < .4;
+      el.className = "floater" + (heart ? " heart" : "");
+      if (heart) el.textContent = marks[i % marks.length];
+      el.style.setProperty("--x", (6 + Math.random() * 88).toFixed(1) + "%");
+      el.style.setProperty("--s", (heart ? 13 + Math.random() * 12 : 9 + Math.random() * 12).toFixed(1) + "px");
+      el.style.setProperty("--t", (7 + Math.random() * 5).toFixed(1) + "s");
+      el.style.setProperty("--d", (Math.random() * 3).toFixed(2) + "s");
+      el.style.setProperty("--dx", (Math.random() * 140 - 70).toFixed(0) + "px");
+      el.style.setProperty("--dy", (-48 - Math.random() * 32).toFixed(0) + "vh");
+      el.style.setProperty("--rot", (Math.random() * 300 - 150).toFixed(0) + "deg");
+      el.style.setProperty("--o", (.45 + Math.random() * .45).toFixed(2));
+      floaters.appendChild(el);
+    }
+  }
+
+  /* ================= 🎙️ Ken's voice message (the button under the envelope) =================
+     One <audio> element for the whole page: created once, never autoplayed, never looped.
+     Closing the surprise pauses it and keeps the position, so she can wander back.
+     If the mp3 is not there yet, the button still appears and says so, kindly. */
+  var VOICE_SRC = (typeof window.VOICE_MESSAGE_AUDIO === "string") ? window.VOICE_MESSAGE_AUDIO : "";
+  var VOICE_CFG = L.voice || {};
+  function vopt(key, fallback) {
+    var v = VOICE_CFG[key];
+    return (typeof v === "string" && v) ? v : fallback;
+  }
+  var vLabelCta = vopt("label", "Play a VM from Ken \uD83C\uDF99\uFE0F\u2764\uFE0F");
+  var vLabelPause = vopt("playingLabel", "Pause Voice Message \u23F8\uFE0F");
+  var vLabelResume = vopt("pausedLabel", "Resume Voice Message \u25B6\uFE0F");
+  var vStatusIdle = vopt("statusIdle", "Press play to hear my voice \u2764\uFE0F");
+  var vStatusPlaying = vopt("statusPlaying", "Playing Ken's message... \u2764\uFE0F");
+  var vStatusCaption = vopt("caption", "Ken is talking to you \u2764\uFE0F");
+  var vStatusPaused = vopt("statusPaused", "Paused \u2014 press play to keep listening \u2764\uFE0F");
+  var vStatusEnded = vopt("statusEnded", "That was from me to you \u2764\uFE0F");
+  var vStatusMissing = vopt("statusMissing", "Ken's voice message isn't uploaded yet \u2764\uFE0F");
+  var vStatusBlocked = vopt("statusBlocked", "Tap play once more to hear it \u2764\uFE0F");
+  var voicePlayer = document.getElementById("voicePlayer");
+  var voiceBtn = document.getElementById("voiceBtn");
+  var voiceLabelEl = document.getElementById("voiceLabel");
+  var voiceBarEl = document.getElementById("voiceBar");
+  var voiceFillEl = document.getElementById("voiceFill");
+  var voiceNowEl = document.getElementById("voiceNow");
+  var voiceTotalEl = document.getElementById("voiceTotal");
+  var voiceStatusEl = document.getElementById("voiceStatus");
+  var voice = null;        /* the one audio element */
+  var voiceBroken = false; /* the file is missing, or this browser cannot decode it */
+
+  function vClock(sec) {
+    if (!isFinite(sec) || sec < 0) return "--:--";
+    var s = Math.floor(sec % 60), m = Math.floor(sec / 60);
+    return m + ":" + (s < 10 ? "0" : "") + s;
+  }
+  function vSay(text) {
+    if (voiceStatusEl.textContent !== text) voiceStatusEl.textContent = text;
+  }
+  function vPlaying() { return !!voice && !voice.paused && !voice.ended; }
+  function vPaint() {
+    var on = vPlaying();
+    voicePlayer.classList.toggle("is-playing", on);
+    voiceBtn.setAttribute("aria-pressed", on ? "true" : "false");
+    /* a file that is not there yet always shows the call to action, never "resume" */
+    voiceLabelEl.textContent = voiceBroken ? vLabelCta
+      : (on ? vLabelPause : (voice && !voice.ended && voice.currentTime > .05 ? vLabelResume : vLabelCta));
+  }
+  function vProgress() {
+    if (!voice) return;
+    var dur = voice.duration, at = voice.currentTime;
+    var pct = (isFinite(dur) && dur > 0) ? Math.max(0, Math.min(1, at / dur)) : 0;
+    voiceFillEl.style.width = (pct * 100).toFixed(2) + "%";
+    voiceBarEl.setAttribute("aria-valuenow", Math.round(pct * 100));
+    voiceNowEl.textContent = vClock(at);
+    voiceTotalEl.textContent = vClock(dur);
+  }
+  function vUnavailable() {
+    voiceBroken = true;
+    voicePlayer.classList.add("is-missing");
+    voiceBtn.setAttribute("aria-disabled", "true");
+    voiceLabelEl.textContent = vLabelCta;
+    voiceFillEl.style.width = "0%";
+    voiceBarEl.setAttribute("aria-valuenow", "0");
+    voiceNowEl.textContent = "0:00";
+    voiceTotalEl.textContent = "--:--";
+    vSay(vStatusMissing);
+    vPaint();
+  }
+  function vBuild() {
+    if (voice || !VOICE_SRC) return;   /* one element, bound once, ever */
+    voice = document.createElement("audio");
+    voice.className = "voice-audio";
+    voice.preload = "metadata";
+    voice.autoplay = false;
+    voice.loop = false;
+    voice.setAttribute("src", VOICE_SRC);
+    voice.setAttribute("aria-hidden", "true");
+    voice.addEventListener("loadedmetadata", vProgress);
+    voice.addEventListener("durationchange", vProgress);
+    voice.addEventListener("timeupdate", vProgress);
+    voice.addEventListener("play", function () {
+      vPaint();
+      vSay(vStatusPlaying);
+      later(1800, function () { if (vPlaying()) vSay(vStatusCaption); });
+    });
+    voice.addEventListener("pause", function () {
+      vPaint();
+      if (!voice.ended && voice.currentTime > .05) vSay(vStatusPaused);
+    });
+    voice.addEventListener("ended", function () {
+      vPaint();
+      vSay(vStatusEnded);
+      vProgress();
+    });
+    voice.addEventListener("error", function () { vUnavailable(); });
+    voicePlayer.appendChild(voice);
+  }
+  function vToggle() {
+    vBuild();
+    if (!voice || voiceBroken) { vUnavailable(); return; }   /* nothing to play, say so gently */
+    if (vPlaying()) { voice.pause(); return; }               /* keeps her place in the message */
+    if (voice.ended) { try { voice.currentTime = 0; } catch (e) {} }
+    try {
+      var p = voice.play();                                  /* started inside the tap: iOS-safe */
+      if (p && typeof p.catch === "function") {
+        p.catch(function () {
+          if (voice && voice.error) vUnavailable(); else vSay(vStatusBlocked);
+        });
+      }
+    } catch (e) {
+      vSay(vStatusBlocked);
+    }
+  }
+  function vLeave() {   /* the surprise is closing: silence, keep her place, keep the one element */
+    if (voice && !voice.paused) voice.pause();
+    vPaint();
+    vSay(voice && voice.ended ? vStatusEnded : (voice && voice.currentTime > .05 ? vStatusPaused : vStatusIdle));
+  }
+
+  voiceLabelEl.textContent = vLabelCta;
+  vSay(vStatusIdle);
+  voiceBtn.addEventListener("click", vToggle);
+  vBuild();
+
+  function openEnvelope() {
+    if (state !== "bloomed") return;
+    clearTimers();
+    hideToken++;
+    state = "envelope";
+    floaters.innerHTML = "";
+    spawnFloaters(floaterCount(10));
+    surprise.hidden = false;
+    void surprise.offsetWidth;
+    document.body.classList.add("envelope");
+    setStageInert(true);
+    envelopeBtn.focus();
+  }
+
+  function openLetter() {
+    if (state !== "envelope") return;
+    state = "opening";
+    document.body.classList.add("opening");
+    later(900, function () {
+      if (state !== "opening") return;
+      document.body.classList.add("out");
+      spawnFloaters(floaterCount(9));
+    });
+    later(2300, function () {
+      if (state !== "opening") return;
+      state = "letter";
+      letterScroll.scrollTop = 0;
+      document.body.classList.add("letter");
+      setStageInert(true);
+      requestAnimationFrame(function () { letterClose.focus(); });
+    });
+  }
+
+  function closeSurprise() {
+    if (state !== "envelope" && state !== "opening" && state !== "letter") return;
+    clearTimers();
+    vLeave();   /* stop the voice message but keep the place she was in */
+    state = "bloomed";
+    document.body.classList.remove("envelope", "opening", "out", "letter");
+    setStageInert(false);
+    /* bring the message + button back straight away instead of on the slow first-run delay */
+    document.body.classList.add("back");
+    setTimeout(function () {
+      if (state === "bloomed") document.body.classList.remove("back");
+    }, 900);
+    var token = ++hideToken;
+    later(700, function () {
+      if (token !== hideToken) return;
+      surprise.hidden = true;
+      floaters.innerHTML = "";
+    });
+    replayBtn.focus();
+  }
+
+  function burstParticles() {
+    burst.innerHTML = "";
+    var ring = document.createElement("span");
+    ring.className = "ring";
+    burst.appendChild(ring);
+    for (var i = 0; i < 26; i++) {
+      var spark = document.createElement("span");
+      spark.className = "spark";
+      var ang = Math.random() * Math.PI * 2;
+      var dist = 70 + Math.random() * 130;
+      spark.style.setProperty("--dx", Math.cos(ang) * dist + "px");
+      spark.style.setProperty("--dy", Math.sin(ang) * dist + "px");
+      spark.style.setProperty("--sz", (5 + Math.random() * 7) + "px");
+      spark.style.setProperty("--c", colors[i % colors.length]);
+      spark.style.animationDelay = (Math.random() * .35) + "s";
+      burst.appendChild(spark);
+    }
+    setTimeout(function () { burst.innerHTML = ""; }, 2600);
+  }
+
+  function bloom() {
+    if (state !== "bud") return;
+    state = "blooming";
+    bloomBtn.setAttribute("aria-label", "The flower is blooming");
+    document.body.classList.add("bloomed");
+    burstParticles();
+    setTimeout(function () {
+      if (state !== "blooming") return;
+      state = "bloomed";
+      document.body.classList.add("done");
+      replayBtn.hidden = false;
+      bloomBtn.setAttribute("aria-label", "A fully bloomed flower");
+    }, 3400);
+  }
+
+  bloomBtn.addEventListener("click", bloom);
+  replayBtn.addEventListener("click", openEnvelope);
+  envelopeBtn.addEventListener("click", openLetter);
+  letterClose.addEventListener("click", closeSurprise);
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" || e.key === "Esc") closeSurprise();
+  });
+})();
+</script>
+</body>
+</html>
