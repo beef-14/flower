@@ -1,16 +1,16 @@
-PASS [state] page loads over http | http: | complete | 192
+PASS [state] page loads over http | http: | complete | 196
 PASS [state] initial state is bud | body class = bud
 PASS [state] flower structure built | 29 petals / 6 sepals
 PASS [state] background particles present | 16 bokeh / 7 falling
 PASS [state] petals start closed | max |scale| = 0.12
 PASS [state] message hidden in bud state | opacity = 0
-PASS [state] hint visible in bud state | opacity = 0.707114 (pulses .45-.9) text = "tap the flower 🌸"
+PASS [state] hint visible in bud state | opacity = 0.53749 (pulses .45-.9) text = "tap the flower 🌸"
 PASS [state] replay button hidden
 PASS [state] bud tip at unit scale | matrix(1, 0, 0, 1, 0, 0)
 PASS [state] stem stroke covers whole path | dasharray = 320 / pathLength = 250
 PASS [state] stem top reaches into the flower head | overlap = 7px
-PASS [state] leaf 0 blade attached to stem (bud) | gap = -6px
-PASS [state] leaf 1 blade attached to stem (bud) | gap = -6.1px
+PASS [state] leaf 0 blade attached to stem (bud) | gap = -5.7px
+PASS [state] leaf 1 blade attached to stem (bud) | gap = -6.4px
 PASS [state] click starts the bloom | body class = bloomed
 PASS [state] double click fires one burst | 26 sparks / 1 ring
 PASS [state] message stays hidden while blooming | opacity = 0
@@ -18,13 +18,13 @@ PASS [state] replay stays hidden while blooming
 PASS [state] petals are opening | 0.12 -> 0.995
 PASS [state] bloom completes | body class = bloomed done
 PASS [state] petals fully open | max |scale| = 1.001
-PASS [state] message revealed | opacity = 0.991912
-PASS [state] message unblurred | blur(0.09705px) = 0.09705px blur
+PASS [state] message revealed | opacity = 0.992457
+PASS [state] message unblurred | blur(0.090514px) = 0.090514px blur
 PASS [state] replay revealed | opacity = 0.85
 PASS [state] hint faded out | opacity = 0
-PASS [state] leaf blades attached after bloom | [{"leaf":0,"gap":-5.7},{"leaf":1,"gap":-6.7}]
-PASS [state] artifact state-desktop.png written | 491 KB -> _artifacts\state-desktop.png
-PASS [state] artifact state-mobile.png written | 612 KB -> _artifacts\state-mobile.png
+PASS [state] leaf blades attached after bloom | [{"leaf":0,"gap":-5.7},{"leaf":1,"gap":-6.9}]
+PASS [state] artifact state-desktop.png written | 493 KB -> _artifacts\state-desktop.png
+PASS [state] artifact state-mobile.png written | 616 KB -> _artifacts\state-mobile.png
 PASS [state] no h-overflow at 390px | 390 / 390
 PASS [state] 'Bloom Again' opens the envelope screen | body class = bloomed done envelope
 PASS [state] Escape closes the surprise | body class = bloomed done
@@ -32,10 +32,10 @@ PASS [state] the overlay is hidden again
 PASS [state] the message comes back after closing | blur(0px)
 PASS [state] 'Bloom Again' comes back after closing | opacity = 0.85
 PASS [state] the flower region is focusable again
-PASS [state] artifact state-bud.png written | 514 KB -> _artifacts\state-bud.png
+PASS [state] artifact state-bud.png written | 517 KB -> _artifacts\state-bud.png
 PASS [state] a fresh load shows the bud again | max |scale| = 0.12, message opacity = 0
 PASS [state] bud keeps the message blurred | blur(12px)
-PASS [state] bud keeps the hint visible | opacity = 0.870198 (pulses .45-.9)
+PASS [state] bud keeps the hint visible | opacity = 0.870192 (pulses .45-.9)
 PASS [state] bud restores the bud tip | matrix(1, 0, 0, 1, 0, 0)
 PASS [state] stem/head overlap after reload | overlap = 5px
 PASS [state] leaf blades attached after reload | [{"leaf":0,"gap":-4.6},{"leaf":1,"gap":-4.5}]
@@ -51,7 +51,7 @@ PASS [zoom] sepal collar reaches below the stem top | sepal bottom = 270 / stem 
 PASS [zoom] bud tip sits inside the sepal collar | tip bottom = 234 in [201, 270]
 PASS [zoom] 18x head crop fits the viewport | {"x":608,"y":228,"width":60,"height":62,"scale":6,"sepsTop":201,"sepsBottom":270,"stemTop":263,"tipBottom":234}
 PASS [zoom] artifact zoom-head.png written | 243 KB -> _artifacts\zoom-head.png
-PASS [surprise] the LETTER config is complete | 5 paragraphs; keys bloomAgainLabel, envelopeTitle, tapHint, heading, paragraphs, wish, closing, signature, finale, voice
+PASS [surprise] the LETTER config is complete | 5 paragraphs; keys bloomAgainLabel, envelopeTitle, tapHint, heading, paragraphs, wish, closing, signature, finale, voice, music
 PASS [surprise] 'Bloom Again' is hidden before the bloom
 PASS [surprise] the surprise overlay starts hidden
 PASS [surprise] button label comes from the config | "Bloom Again 🌸"
@@ -71,10 +71,10 @@ PASS [surprise] artifact state-envelope.png written | 758 KB -> _artifacts\state
 PASS [surprise] nothing but the envelope opens the letter | body class = bloomed done envelope
 PASS [surprise] a double tap still opens just once | body class = bloomed done envelope opening
 PASS [surprise] the heart seal opens first | seal opacity = 0
-PASS [surprise] the top flap rotates up | matrix(1, 0, 0, 1, 0, 0) -> matrix3d(1, 0, 0, 0, 0, -0.976671, -0.214742, 0, 0, 0.214742, -0.976671, 0, 0, 0, 0, 1)
+PASS [surprise] the top flap rotates up | matrix(1, 0, 0, 1, 0, 0) -> matrix3d(1, 0, 0, 0, 0, -0.976683, -0.214685, 0, 0, 0.214685, -0.976683, 0, 0, 0, 0, 1)
 PASS [surprise] the envelope leans toward her | none -> matrix(1.06, 0, 0, 1.06, 0, 0)
-PASS [surprise] artifact state-envelope-opening.png written | 730 KB -> _artifacts\state-envelope-opening.png
-PASS [surprise] the letter sheet slides out of the pocket | matrix(0.969874, 0, 0, 0.969874, 0, 8.54109) -> matrix(1, 0, 0, 1, 0, -44.8)
+PASS [surprise] artifact state-envelope-opening.png written | 732 KB -> _artifacts\state-envelope-opening.png
+PASS [surprise] the letter sheet slides out of the pocket | matrix(0.969874, 0, 0, 0.969874, 0, 8.54103) -> matrix(1, 0, 0, 1, 0, -44.8)
 PASS [surprise] artifact state-envelope-out.png written | 729 KB -> _artifacts\state-envelope-out.png
 PASS [surprise] the letter view is reached | body class = bloomed done envelope opening out letter
 PASS [surprise] every paragraph is rendered from the config | 5 of 5
@@ -82,97 +82,163 @@ PASS [surprise] heading / wish / signature / finale match the config | ["Hellloo
 PASS [surprise] paragraph text matches the config | "I love you more than words can explain."
 PASS [surprise] the finale closes the letter | letter-finale
 PASS [surprise] the letter text has faded in | first line opacity = 1
-PASS [surprise] the letter fits the viewport | {"left":360,"right":920,"top":57,"bottom":705,"height":648,"width":560} inside 1280x900
+PASS [surprise] the letter fits the viewport | {"left":360,"right":920,"top":58,"bottom":706,"height":648,"width":560} inside 1280x900
 PASS [surprise] only the letter body scrolls | overflow-y auto, scroll 641/538, page overflow false
 PASS [surprise] the letter scrolls on a desktop screen | 641 > 538
 PASS [surprise] close control is a 44px target | 44px at opacity 0.9
-PASS [surprise] artifact state-letter.png written | 791 KB -> _artifacts\state-letter.png
-PASS [surprise] artifact state-letter-end.png written | 785 KB -> _artifacts\state-letter-end.png
+PASS [surprise] artifact state-letter.png written | 792 KB -> _artifacts\state-letter.png
+PASS [surprise] artifact state-letter-end.png written | 784 KB -> _artifacts\state-letter-end.png
 PASS [surprise] closing returns to the bloomed flower | body class = bloomed done
 PASS [surprise] the overlay is hidden after closing
 PASS [surprise] the surprise can be opened again | body class = bloomed done envelope
 PASS [surprise] the envelope fits a 390px phone | 242px wide, 283..444 of 844
 PASS [surprise] fewer floaters on a phone | 7 floaters
-PASS [surprise] artifact state-envelope-mobile.png written | 829 KB -> _artifacts\state-envelope-mobile.png
+PASS [surprise] artifact state-envelope-mobile.png written | 832 KB -> _artifacts\state-envelope-mobile.png
 PASS [surprise] the letter fits a 390px phone | {"left":16,"right":375,"top":59,"bottom":667,"height":608,"width":359} inside 390x844
-PASS [surprise] the letter scrolls on a phone | 587 > 533
+PASS [surprise] the letter scrolls on a phone | 586 > 533
 PASS [surprise] artifact state-letter-mobile.png written | 778 KB -> _artifacts\state-letter-mobile.png
 PASS [surprise] reduced motion still opens the envelope | body class = bloomed done envelope, overlay 1280x900, envelope 300px
 PASS [surprise] reduced motion still reaches the letter | body class = bloomed done envelope opening out letter
 PASS [surprise] reduced motion keeps every line visible | first line opacity 1, close 0.9, 5 paragraphs
 PASS [voice] the voice message has one named destination | "public/audio/ken-voice-message.mp3"
-PASS [voice] that file exists where the config points | 191403 bytes at public\audio\ken-voice-message.mp3
+PASS [voice] that file exists where the config points | 557876 bytes at public\audio\ken-voice-message.mp3
 PASS [voice] every voice string comes from the config | label, playingLabel, pausedLabel, statusIdle, statusPlaying, caption, statusPaused, statusEnded, statusMissing, statusBlocked
-PASS [voice] the button starts on the configured call to action | "Play a VM from Ken 🎙️❤️"
+PASS [voice] the button starts on the configured call to action | "Play a VM from Ken"
 PASS [voice] the voice player appears with the envelope screen | opacity 1, pointer-events auto
-PASS [voice] the button sits below the envelope | player top 760 vs envelope bottom 493
-PASS [voice] the button is a comfortable touch target | 251x44px
-PASS [voice] the label is the call to action before any tap | "Play a VM from Ken 🎙️❤️"
-PASS [voice] the status line invites her in | "Press play to hear my voice ❤️" / aria-live polite
+PASS [voice] the button sits below the envelope | player top 761 vs envelope bottom 494
+PASS [voice] the button is a comfortable touch target | 209x44px
+PASS [voice] the label is the call to action before any tap | "Play a VM from Ken"
+PASS [voice] the status line invites her in | "Press play to hear my voice" / aria-live polite
 PASS [voice] the progress bar is a labelled progressbar | progressbar, "How much of the voice message has played", now 0
 PASS [voice] the visualizer is still until she taps | animation none
 PASS [voice] the visualizer is decoration only | aria-hidden = true
-PASS [voice] one attached audio element, never autoplaying | 1 element(s), [true,false,false,"metadata"]
-PASS [voice] the length of the message is known up front | duration 11.99s, seekable 11.99
-PASS [voice] the total time renders before playing | 0:00 / 0:11
+PASS [voice] one attached voice element plus one separate music element, never autoplaying | 2 element(s) = 1 voice + 1 music, [true,false,false,"metadata"]
+PASS [voice] the length of the message is known up front | duration 30.51s, seekable 30.51
+PASS [voice] the total time renders before playing | 0:00 / 0:30
 PASS [voice] no horizontal overflow with the player on screen | scrollWidth 1280 vs 1280
 PASS [voice] artifact state-voice.png written | 759 KB -> _artifacts\state-voice.png
-PASS [voice] a real tap starts the audio | paused false, t 0.09
-PASS [voice] the button turns into the pause control | "Pause Voice Message ⏸️" / aria-pressed true
-PASS [voice] the status says Ken's message is playing | "Playing Ken's message... ❤️"
+PASS [voice] a real tap starts the audio | paused false, t 0.22
+PASS [voice] the button turns into the pause control | "Pause Voice Message" / aria-pressed true
+PASS [voice] the status says Ken's message is playing | "Playing Ken's message..."
 PASS [voice] the visualizer comes alive | animation voiceBar
 PASS [voice] artifact state-voice-playing.png written | 761 KB -> _artifacts\state-voice-playing.png
-PASS [voice] the clock advances while playing | 0.09 -> 2.71s
-PASS [voice] the progress fill grows with it | 0 -> 68px of 331 (20%)
-PASS [voice] the status settles into the caption | "Ken is talking to you ❤️"
-PASS [voice] the time reads like a clock | 0:02 / 0:11
+PASS [voice] the clock advances while playing | 0.22 -> 2.82s
+PASS [voice] the progress fill grows with it | 0 -> 28px of 327 (8%)
+PASS [voice] the status settles into the caption | "Ken is talking to you"
+PASS [voice] the time reads like a clock | 0:02 / 0:30
 PASS [voice] tapping again pauses | paused true
-PASS [voice] the button offers resume | "Resume Voice Message ▶️"
-PASS [voice] the status owns up to the pause | "Paused — press play to keep listening ❤️"
+PASS [voice] the button offers resume | "Resume Voice Message"
+PASS [voice] the status owns up to the pause | "Paused — press play to keep listening"
 PASS [voice] the visualizer stops with the sound | animation none
-PASS [voice] the position is kept when paused | stopped at 2.72s
-PASS [voice] paused really means paused | 2.72 -> 2.72s
-PASS [voice] resuming carries on from where she stopped | 2.72 -> 3.63s
+PASS [voice] the position is kept when paused | stopped at 2.85s
+PASS [voice] paused really means paused | 2.85 -> 2.85s
+PASS [voice] resuming carries on from where she stopped | 2.85 -> 3.77s
 PASS [voice] the visualizer is alive again | animation voiceBar
-PASS [voice] the message keeps playing while the envelope opens | t = 5.64s of 11.99
+PASS [voice] the message keeps playing while the envelope opens | t = 5.79s of 30.51
 PASS [voice] the letter view is reached | body class = bloomed done envelope opening out letter
 PASS [voice] the voice player is still there over the letter | opacity 1, pointer-events auto
-PASS [voice] the letter card never covers the voice button | card bottom 705 vs player top 760
+PASS [voice] the letter card never covers the voice button | card bottom 706 vs player top 761
 PASS [voice] the voice button is the top element there | elementFromPoint -> SPAN.voice-label
 PASS [voice] the letter view has no horizontal overflow | scrollWidth 1280 vs 1280
 PASS [voice] artifact state-voice-letter.png written | 794 KB -> _artifacts\state-voice-letter.png
-PASS [voice] the message ends on its own | ended true at 11.99s
-PASS [voice] the button goes back to the call to action | "Play a VM from Ken 🎙️❤️"
-PASS [voice] the status says the message is over | "That was from me to you ❤️"
+PASS [voice] the message ends on its own | ended true at 30.57s
+PASS [voice] the button goes back to the call to action | "Play a VM from Ken"
+PASS [voice] the status says the message is over | "That was from me to you"
 PASS [voice] it does not loop | loop false
-PASS [voice] nothing restarts by itself | 11.99 -> 11.99s
-PASS [voice] tapping again replays from the top | 11.99 -> 0.64s
-PASS [voice] closing the surprise stops the message | paused true, t 0.64
-PASS [voice] closing leaves just the one audio element | 1 element(s), attached true
-PASS [voice] reopening reuses the same player and does not restart it | 1 element(s), paused true, label "Resume Voice Message ▶️"
+PASS [voice] nothing restarts by itself | 30.57 -> 30.57s
+PASS [voice] tapping again replays from the top | 30.57 -> 0.65s
+PASS [voice] closing the surprise stops the message | paused true, t 0.65
+PASS [voice] closing leaves exactly one voice element and one music element | 2 element(s) = 1 voice + 1 music, attached true
+PASS [voice] reopening reuses the same player and does not restart it | 2 element(s) = 1 voice + 1 music, paused true, label "Resume Voice Message"
 PASS [voice] the player fits a 390px phone | {"left":16,"top":724,"right":375,"bottom":824,"w":359,"h":100} inside 390x844
 PASS [voice] the button is still below the envelope on a phone | player top 724 vs envelope bottom 441
-PASS [voice] the button is still a 44px target on a phone | 228x44px
-PASS [voice] artifact state-voice-mobile.png written | 834 KB -> _artifacts\state-voice-mobile.png
-PASS [voice] the message plays on a phone | t = 1.57s, overflow false
+PASS [voice] the button is still a 44px target on a phone | 206x44px
+PASS [voice] artifact state-voice-mobile.png written | 833 KB -> _artifacts\state-voice-mobile.png
+PASS [voice] the message plays on a phone | t = 1.56s, overflow false
 PASS [voice] the phone letter leaves room for the voice button | card bottom 667 vs player top 724
 PASS [voice] the phone letter stays inside the screen | {"left":16,"right":375,"top":59,"bottom":667,"h":608} inside 390x844, scrollWidth 390 / body 390
-PASS [voice] artifact state-voice-letter-mobile.png written | 773 KB -> _artifacts\state-voice-letter-mobile.png
+PASS [voice] artifact state-voice-letter-mobile.png written | 781 KB -> _artifacts\state-voice-letter-mobile.png
 PASS [voice] the player fits a 320x568 phone | {"left":16,"top":448,"right":310,"bottom":548,"w":294,"h":100} inside 320x568
-PASS [voice] nothing collides on a 320x568 phone | player top 448 vs envelope bottom 299, 228x44
-PASS [voice] artifact state-voice-small.png written | 500 KB -> _artifacts\state-voice-small.png
+PASS [voice] nothing collides on a 320x568 phone | player top 448 vs envelope bottom 299, 206x44
+PASS [voice] artifact state-voice-small.png written | 503 KB -> _artifacts\state-voice-small.png
 PASS [voice] the letter still fits above the player on a small phone | card 35..421 vs player top 448
-PASS [voice] a missing file shows the gentle note | "Ken's voice message isn't uploaded yet ❤️"
-PASS [voice] the button survives a missing file | 251x44, "Play a VM from Ken 🎙️❤️", disabled true
+PASS [voice] a missing file shows the gentle note | "Ken's voice message isn't uploaded yet"
+PASS [voice] the button survives a missing file | 209x44, "Play a VM from Ken", disabled true
 PASS [voice] the clock shows no invented length | 0:00 / --:-- (0%)
 PASS [voice] the visualizer goes quiet instead of pretending | animation none
 PASS [voice] artifact state-voice-missing.png written | 757 KB -> _artifacts\state-voice-missing.png
-PASS [voice] tapping a missing message is harmless | "Play a VM from Ken 🎙️❤️" / "Ken's voice message isn't uploaded yet ❤️"
-PASS [voice] reduced motion still shows the voice button | opacity 1, 251x44
-PASS [voice] reduced motion still plays the message | t = 0.9s
+PASS [voice] tapping a missing message is harmless | "Play a VM from Ken" / "Ken's voice message isn't uploaded yet"
+PASS [voice] reduced motion still shows the voice button | opacity 1, 209x44
+PASS [voice] reduced motion still plays the message | t = 0.93s
 PASS [voice] reduced motion calms the visualizer | animation none
-PASS [voice] reduced motion keeps the clock and the bar working | 0:00 / 0:11 at 6%
-PASS [voice] artifact state-voice-reduced.png written | 763 KB -> _artifacts\state-voice-reduced.png
+PASS [voice] reduced motion keeps the clock and the bar working | 0:00 / 0:30 at 2%
+PASS [voice] artifact state-voice-reduced.png written | 764 KB -> _artifacts\state-voice-reduced.png
+PASS [music] the background music has one named destination | "public/audio/background-music.mp3"
+PASS [music] that file exists where the config points | 477984 bytes at public\audio\background-music.mp3
+PASS [music] the volume is soft by default | BACKGROUND_MUSIC_VOLUME = 0.25
+PASS [music] both corner labels come from the config | {"playingLabel":"Music playing","pausedLabel":"Music paused"}
+PASS [music] two separate audio elements, one per source | 2 element(s): music "public/audio/background-music.mp3" vs voice "public/audio/ken-voice-message.mp3"
+PASS [music] nothing plays before the flower is tapped | music paused true, autoplay false, t 0
+PASS [music] the music is built to loop at the soft volume | loop true, volume 0.25
+PASS [music] the music file really decodes | duration 60.003s, seekable 60.003, error null
+PASS [music] the corner note is hidden until she taps the flower | hidden true
+PASS [music] artifact state-music-idle.png written | 436 KB -> _artifacts\state-music-idle.png
+PASS [music] tapping the flower starts the music | paused false, error null
+PASS [music] it plays at exactly the soft volume | volume 0.25
+PASS [music] the corner note appears and says Music playing | "Music playing", hidden false
+PASS [music] the note never eats a tap | top element at the note = MAIN
+PASS [music] artifact state-music-blooming.png written | 466 KB -> _artifacts\state-music-blooming.png
+PASS [music] the song really advances | 0.855 -> 4.382s
+PASS [music] the flower finished blooming with the song playing | body class = bloomed done, music t = 4.382
+PASS [music] the envelope opens with the music still playing | body class = bloomed done envelope, music paused false
+PASS [music] the note sits inside the viewport | {"left":10,"top":10,"right":115,"bottom":30,"w":105,"h":20} inside 1280x900
+PASS [music] the note never lands on the envelope title | note {"left":10,"top":10,"right":115,"bottom":30,"w":105,"h":20} vs title top 224
+PASS [music] artifact state-music-envelope.png written | 764 KB -> _artifacts\state-music-envelope.png
+PASS [music] pressing the VM pauses the music | music paused true, voice playing at 0.651s
+PASS [music] the song is frozen at the second it had reached | 6.496 -> 6.545s
+PASS [music] music and voice are never heard together | bothPlaying false
+PASS [music] the note owns up to the pause | "Music paused"
+PASS [music] artifact state-music-paused.png written | 762 KB -> _artifacts\state-music-paused.png
+PASS [music] the song does not creep forward while Ken talks | 6.545 -> 6.545s
+PASS [music] Ken's message is the only thing playing | voice t = 2.466s
+PASS [music] the VM pauses by hand | voice paused true at 2.489s
+PASS [music] the music stays paused while the VM is paused | music paused true
+PASS [music] the song still has not moved | 6.545 -> 6.545s
+PASS [music] resuming the VM does not wake the music | voice paused false, music paused true
+PASS [music] still never together | bothPlaying false
+PASS [music] the message ended | ended true at 30.566s
+PASS [music] the music resumes when the message ends | music paused false
+PASS [music] it resumes from where it stopped, not from the top | stopped at 6.496s, resumed at 7.808s
+PASS [music] the soft volume comes back | volume 0.25
+PASS [music] the note says the music is playing again | "Music playing"
+PASS [music] again: never both playing | bothPlaying false
+PASS [music] artifact state-music-resumed.png written | 759 KB -> _artifacts\state-music-resumed.png
+PASS [music] a second VM run replays the message from the top | 30.566 -> 0.763s
+PASS [music] and pauses the music again at its own second | music at 8.846s (was 8.801s)
+PASS [music] the music comes back a second time, from the newer position | stopped at 8.801s, resumed at 10.179s
+PASS [music] the note is honest after the second run | "Music playing"
+PASS [music] the song loops instead of stopping | paused false, ended false, loop true
+PASS [music] it really came round again | wrapped to 0.952s of 60.003s
+PASS [music] the letter view is reached with the music playing | body class = bloomed done envelope opening out letter, music paused false
+PASS [music] the note stays clear of the letter card | note {"left":10,"top":10,"right":115,"bottom":30,"w":105,"h":20} vs card top 79
+PASS [music] the note stays clear of the voice player | note {"left":10,"top":10,"right":115,"bottom":30,"w":105,"h":20} vs player {"left":425,"top":761,"right":855,"bottom":880,"w":430,"h":119}
+PASS [music] no horizontal overflow with the note on screen | scrollWidth 1280 vs 1280
+PASS [music] artifact state-music-letter.png written | 766 KB -> _artifacts\state-music-letter.png
+PASS [music] closing the surprise leaves the music playing | music paused false, voice paused true
+PASS [music] no second music element appeared | 2 element(s) = 1 voice + 1 music
+PASS [music] a second flower tap changes nothing in the audio | 2 elements, music paused false
+PASS [music] the note fits a 390px phone | {"left":10,"top":10,"right":115,"bottom":30,"w":105,"h":20} inside 390x844
+PASS [music] the note stays small on a phone | 105x20px
+PASS [music] no horizontal overflow on a phone | scrollWidth 390 vs 390
+PASS [music] the music still plays on a phone | music paused false
+PASS [music] artifact state-music-mobile.png written | 617 KB -> _artifacts\state-music-mobile.png
+PASS [music] a missing music file hides the note | hidden true
+PASS [music] the flower still blooms without any music | body class = bloomed, music paused true
+PASS [music] the envelope is on screen before the VM is tapped | body class = bloomed done envelope, player 430x119
+PASS [music] the voice message still plays on its own | voice paused false (t 0.749s of 30.514), music paused true
+PASS [music] nothing overlaps even when the music is gone | bothPlaying false
+PASS [music] reduced motion still starts the music | paused false, hidden false
+PASS [music] reduced motion stops the note bouncing | animation none
 PASS [sizes] no h-overflow @ iPhoneSE (320x568) | scrollWidth 320 vs innerWidth 320
 PASS [sizes] no h-overflow @ small-android (360x640) | scrollWidth 360 vs innerWidth 360
 PASS [sizes] no h-overflow @ iPhone14 (390x844) | scrollWidth 390 vs innerWidth 390
@@ -186,4 +252,4 @@ PASS [sizes] both leaf blades bite into the stem at every viewport | smallest le
 PASS [sizes] flower scales inside its clamp range | 252..347px
 PASS [global] no console errors or exceptions | 0 messages
 
-ALL PASS 187/187 in 115.3s
+ALL PASS 253/253 in 153.7s

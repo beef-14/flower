@@ -181,6 +181,15 @@ body.envelope .voice-player,body.opening .voice-player,body.out .voice-player,bo
 .voice-player.is-missing .voice-bars{opacity:0}
 @media (max-width:400px){.voice-player{padding:8px 12px;gap:5px;border-radius:14px}.voice-btn{padding:8px 14px;gap:7px}.voice-mic{width:18px;height:18px}}
 @media (max-height:680px){.voice-player{padding-top:8px;padding-bottom:8px}}
+/* --- 🎵 background music: the hidden element + the tiny corner note (never a music player) --- */
+.music-audio{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;border:0}
+.music-chip{position:fixed;left:10px;top:max(10px,env(safe-area-inset-top));z-index:6;display:flex;align-items:center;gap:5px;max-width:34vw;padding:3px 10px 3px 8px;border-radius:999px;background:rgba(255,253,247,.62);box-shadow:0 3px 10px rgba(150,90,120,.10),inset 0 0 0 1px rgba(226,182,206,.45);backdrop-filter:blur(2px);font-size:.66rem;font-weight:500;letter-spacing:.03em;color:#a8698f;opacity:.72;pointer-events:none;transition:opacity .9s var(--ease)}
+.music-chip[hidden]{display:none}
+.music-chip.is-paused{opacity:.42}
+.music-note{display:block;font-size:.84rem;line-height:1;color:#d0669a;animation:noteBeat 2.6s ease-in-out infinite}
+.music-chip.is-paused .music-note{animation:none;opacity:.45}
+.music-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@keyframes noteBeat{0%,100%{transform:translateY(0) rotate(-5deg);opacity:.72}50%{transform:translateY(-2px) rotate(5deg);opacity:1}}
 
 @media (max-width:560px){.letter-card{border-radius:14px}.env-title{margin-bottom:14px}.letter-body{font-size:clamp(.99rem,3.9vw,1.08rem)}}
 @media (max-height:680px){.letter-card{max-height:min(68svh,calc(100svh - var(--voice-h) - 72px));padding-top:clamp(16px,4vw,26px)}.env-title{font-size:clamp(1.15rem,3.4vh,1.6rem);margin-bottom:10px}.env-hint{margin-top:10px}}
@@ -283,6 +292,18 @@ body.envelope .voice-player,body.opening .voice-player,body.out .voice-player,bo
    replace the FILE, keep the name — nothing in this file needs to be edited. */
 window.VOICE_MESSAGE_AUDIO = "public/audio/ken-voice-message.mp3";
 
+/* 🎵 BACKGROUND MUSIC — the soft track that starts the moment she taps the flower.
+   Same idea as the voice message above: the path is relative to this file, so it works when
+   you double-click index.html and on any host. Drop your own song at
+   public/audio/background-music.mp3  and you are done: replace the FILE, keep the name.
+   A 60 second silent placeholder ships here on purpose — swallow it with your song. */
+window.BACKGROUND_MUSIC = "public/audio/background-music.mp3";
+
+/* How loud the background music is: 0 = silent, 1 = full. Keep it soft on purpose, the
+   flower, the letter and Ken's voice message are the show and the song is only the air.
+   0.20–0.30 is the sweet spot; it never gets louder than this anywhere on the page. */
+window.BACKGROUND_MUSIC_VOLUME = 0.25;
+
 window.LETTER = {
   /* button under the first message */
   bloomAgainLabel: "Bloom Again 🌸",
@@ -314,6 +335,11 @@ window.LETTER = {
     statusEnded: "That was from me to you",
     statusMissing: "Ken's voice message isn't uploaded yet",
     statusBlocked: "Tap play once more to hear it"
+  },
+  /* 🎵 the tiny corner note: it reads "playing" while the song plays and "paused" while Ken talks */
+  music: {
+    playingLabel: "Music playing",
+    pausedLabel: "Music paused"
   }
 };
 </script>
@@ -368,6 +394,13 @@ window.LETTER = {
     </p>
   </section>
 </div>
+
+<!-- 🎵 the only music UI on the page: a tiny note that says what you are hearing -->
+<div class="music-chip" id="musicChip" aria-hidden="true" hidden>
+  <span class="music-note">&#9835;</span>
+  <span class="music-label" id="musicLabel"></span>
+</div>
+
 <script>
 (function () {
   "use strict";
@@ -615,6 +648,7 @@ window.LETTER = {
     voice.addEventListener("play", function () {
       vPaint();
       vSay(vStatusPlaying);
+      mPauseForVoice();   /* the song steps aside for Ken: remembered, never restarted */
       later(1800, function () { if (vPlaying()) vSay(vStatusCaption); });
     });
     voice.addEventListener("pause", function () {
@@ -625,6 +659,7 @@ window.LETTER = {
       vPaint();
       vSay(vStatusEnded);
       vProgress();
+      mResumeAfterVoice();   /* the message is over: the song comes back where it stood */
     });
     voice.addEventListener("error", function () { vUnavailable(); });
     voicePlayer.appendChild(voice);
@@ -649,12 +684,179 @@ window.LETTER = {
     if (voice && !voice.paused) voice.pause();
     vPaint();
     vSay(voice && voice.ended ? vStatusEnded : (voice && voice.currentTime > .05 ? vStatusPaused : vStatusIdle));
+    mResumeAfterVoice();   /* Ken left the stage: never leave the song silent forever */
   }
 
   voiceLabelEl.textContent = vLabelCta;
   vSay(vStatusIdle);
   voiceBtn.addEventListener("click", vToggle);
   vBuild();
+
+  /* ==================== 🎵 background music (the air under the whole story) ====================
+     One <audio> element, built once, never autoplayed: it only starts inside the flower click,
+     which is the one moment every browser lets a page make sound (iOS Safari, Android Chrome,
+     Desktop Chrome/Edge). The rule of this page is absolute: the song and Ken's voice message can
+     never be playing at the same time. mPauseForVoice() remembers the exact second the song had
+     reached; mResumeAfterVoice() puts it back at that second — never at the start — and the loop
+     carries the song round again on its own. If the mp3 is not uploaded yet the page simply stays
+     quiet: the little note in the corner hides and nothing else changes. */
+  var MUSIC_SRC = (typeof window.BACKGROUND_MUSIC === "string") ? window.BACKGROUND_MUSIC : "";
+  var MUSIC_VOL = (function () {
+    var v = Number(window.BACKGROUND_MUSIC_VOLUME);
+    if (!isFinite(v) || v <= 0) v = .25;
+    return Math.max(0, Math.min(1, v));
+  })();
+  var MUSIC_CFG = L.music || {};
+  function mopt(key, fallback) {
+    var v = MUSIC_CFG[key];
+    return (typeof v === "string" && v) ? v : fallback;
+  }
+  var mLabelPlaying = mopt("playingLabel", "Music playing");
+  var mLabelPaused = mopt("pausedLabel", "Music paused");
+  var musicChip = document.getElementById("musicChip");
+  var musicLabelEl = document.getElementById("musicLabel");
+  var music = null;            /* the one music element (separate from the voice element) */
+  var musicBroken = false;     /* file missing, or this browser cannot decode it */
+  var musicWanted = false;     /* she started the experience: the song belongs in the mix */
+  var musicPos = 0;            /* the second the song stood at when Ken started talking */
+  var pausedForVoice = false;  /* the song is holding its breath for the voice message */
+  var musicRetryArmed = false;
+
+  function vmPlaying() { return !!voice && !voice.paused && !voice.ended; }
+
+  function mChip(show, paused) {
+    if (!musicChip) return;
+    var text = paused ? mLabelPaused : mLabelPlaying;
+    if (musicLabelEl.textContent !== text) musicLabelEl.textContent = text;
+    musicChip.classList.toggle("is-paused", !!paused);
+    musicChip.hidden = !show;
+  }
+  /* the note only ever tells the truth about the element it sits next to */
+  function mPaint() {
+    mChip(!!musicWanted && !musicBroken && !!MUSIC_SRC, !(music && !music.paused && !music.ended));
+  }
+
+  function mBuild() {
+    if (music || !MUSIC_SRC) return;      /* one element, built once, ever */
+    music = document.createElement("audio");
+    music.className = "music-audio";
+    music.preload = "auto";               /* loaded, but silent until she taps the flower */
+    music.autoplay = false;               /* never on page load */
+    music.loop = true;                    /* the song comes round again by itself */
+    music.volume = MUSIC_VOL;             /* soft on purpose */
+    music.setAttribute("src", MUSIC_SRC);
+    music.setAttribute("aria-hidden", "true");
+    music.addEventListener("play", function () {
+      mEnforce();                         /* Ken's voice always wins the audio */
+      mPaint();
+    });
+    music.addEventListener("pause", mPaint);
+    music.addEventListener("timeupdate", mEnforce);
+    music.addEventListener("ended", function () {   /* loop is on, so this is only belt and braces */
+      if (vmPlaying()) { musicPos = 0; return; }    /* never come back while Ken is talking */
+      try { music.currentTime = 0; } catch (e) {}
+      mResumeAfterVoice();
+    });
+    music.addEventListener("error", function () { mUnavailable(); });
+    document.body.appendChild(music);
+  }
+
+  /* the invariant of the page: these two never sound together, whichever one started */
+  function mEnforce() {
+    if (!music || music.paused) return;
+    if (vmPlaying()) { musicPos = music.currentTime; pausedForVoice = true; music.pause(); }
+  }
+
+  function mUnavailable() {
+    musicBroken = true;
+    pausedForVoice = false;
+    if (music) { try { music.pause(); } catch (e) {} }
+    mChip(false, false);
+  }
+
+  /* the only place the song is started: play() on an element that a real tap already unlocked */
+  function mStartSong() {
+    if (!music || musicBroken) return;
+    music.volume = MUSIC_VOL;             /* the volume always comes back to the soft setting */
+    var p = null;
+    try { p = music.play(); } catch (e) { p = null; }
+    if (p && typeof p.then === "function") {
+      p.then(function () {
+        if (!vmPlaying() && music && !music.paused) pausedForVoice = false;
+        mPaint();
+      }).catch(function () { mArmResume(); });
+    } else {
+      pausedForVoice = false;
+      mPaint();
+    }
+  }
+
+  /* a blocked play() is not the end of the song: the next touch tries it again (mobile browsers) */
+  function mArmResume() {
+    pausedForVoice = true;
+    mPaint();
+    if (musicRetryArmed) return;
+    musicRetryArmed = true;
+    function retry() {
+      musicRetryArmed = false;
+      document.removeEventListener("pointerdown", retry, true);
+      document.removeEventListener("keydown", retry, true);
+      if (musicWanted && !musicBroken && music && music.paused && !vmPlaying()) mStartSong();
+    }
+    document.addEventListener("pointerdown", retry, true);
+    document.addEventListener("keydown", retry, true);
+  }
+
+  /* called from inside bloom()'s click: the tap itself is what unlocks the sound */
+  function mStart() {
+    if (!MUSIC_SRC) { mChip(false, false); return; }
+    mBuild();
+    if (!music || musicBroken) { mChip(false, false); return; }
+    musicWanted = true;
+    if (!music.paused) { mPaint(); return; }      /* already playing: never restart it */
+    if (music.ended || (isFinite(music.duration) && music.duration > 0 && music.currentTime >= music.duration - .05)) {
+      try { music.currentTime = 0; } catch (e) {} /* a song that had finished starts over cleanly */
+    }
+    mStartSong();
+    mPaint();
+  }
+
+  /* Ken started talking: remember the second, go silent, and stay silent while he talks */
+  function mPauseForVoice() {
+    pausedForVoice = true;
+    if (music && !music.paused) { musicPos = music.currentTime; music.pause(); }
+    mPaint();
+  }
+
+  /* Ken is finished (or left the stage): come back to exactly where the song stood */
+  function mResumeAfterVoice() {
+    if (!music || !musicWanted || musicBroken) { pausedForVoice = false; mPaint(); return; }
+    if (vmPlaying()) return;                      /* he is still talking: keep holding the silence */
+    var dur = music.duration;
+    if (music.ended || (isFinite(dur) && dur > 0 && music.currentTime >= dur - .05)) {
+      try { music.currentTime = 0; } catch (e) {}               /* the song had run out: loop it in */
+    } else if (Math.abs(music.currentTime - musicPos) > .35) {
+      try { music.currentTime = musicPos; } catch (e) {}        /* otherwise: that second, not the top */
+    }
+    mStartSong();
+    mPaint();
+  }
+
+  /* leaving the page (or a mobile app switch): let go of both sounds, keep the position */
+  function mUnmount() {
+    if (music && !music.paused) { musicPos = music.currentTime; try { music.pause(); } catch (e) {} }
+    if (voice && !voice.paused) voice.pause();
+    mPaint();
+  }
+  window.addEventListener("pagehide", mUnmount);
+  window.addEventListener("pageshow", function (e) {   /* back from the bfcache: the song carries on */
+    if (!e.persisted || !musicWanted || musicBroken || vmPlaying()) return;
+    if (!pausedForVoice && music && music.paused) mStartSong();
+  });
+
+  musicLabelEl.textContent = mLabelPlaying;
+  mBuild();
+  mPaint();   /* hidden until the flower is tapped */
 
   function openEnvelope() {
     if (state !== "bloomed") return;
@@ -732,6 +934,7 @@ window.LETTER = {
 
   function bloom() {
     if (state !== "bud") return;
+    mStart();   /* the tap is the gesture: music starts right here, never on page load */
     state = "blooming";
     bloomBtn.setAttribute("aria-label", "The flower is blooming");
     document.body.classList.add("bloomed");

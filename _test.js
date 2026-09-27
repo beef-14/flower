@@ -35,7 +35,7 @@ const path = require("path");
 const os = require("os");
 
 const HERE = __dirname;
-const SUITES = ["state", "zoom", "surprise", "voice", "sizes"];
+const SUITES = ["state", "zoom", "surprise", "voice", "music", "sizes"];
 const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const r1 = n => Math.round(n * 10) / 10;
@@ -78,7 +78,7 @@ function findChrome(explicit) {
 }
 
 const USAGE = [
-  "usage: node _test.js [--suite state|zoom|surprise|voice|sizes] [--file index.html] [--out _artifacts]",
+  "usage: node _test.js [--suite state|zoom|surprise|voice|music|sizes] [--file index.html] [--out _artifacts]",
   "                     [--chrome <path>] [--port 8775] [--cdp 9345]"
 ].join("\n");
 /* ---------------------- tiny static file server ---------------------- */
@@ -364,7 +364,7 @@ const PROBE_VOICE = `JSON.stringify((function(){
   var b = document.getElementById('voiceBtn');
   var bar = document.getElementById('voiceBar');
   var barI = document.querySelector('.voice-bars i');
-  var a = document.querySelector('audio');
+  var a = document.querySelector('.voice-audio');
   var pb = p.getBoundingClientRect(), bb = b.getBoundingClientRect();
   var barBox = bar.getBoundingClientRect();
   var env = document.getElementById('envelope').getBoundingClientRect();
@@ -401,6 +401,8 @@ const PROBE_VOICE = `JSON.stringify((function(){
     hitBtn: !!(mid && (mid === b || b.contains(mid))),
     hitTag: mid ? mid.tagName + (mid.className ? '.' + String(mid.className) : '') : null,
     audioCount: document.querySelectorAll('audio').length,
+    voiceCount: document.querySelectorAll('.voice-audio').length,
+    musicCount: document.querySelectorAll('.music-audio').length,
     audio: a ? {
       src: a.getAttribute('src') || '', cls: a.className, preload: a.preload, autoplay: a.autoplay, loop: a.loop,
       readyState: a.readyState, paused: a.paused, ended: a.ended, err: a.error ? a.error.code : null,
@@ -415,6 +417,53 @@ const PROBE_VOICE = `JSON.stringify((function(){
   };
 })())`;
 
+
+/* Everything the music suite needs in one shot: both audio elements, the corner note, and the
+   boxes the note must never land on. Reads the elements by class, never "the first <audio>". */
+const PROBE_MUSIC = `JSON.stringify((function(){
+  var m = document.querySelector('.music-audio');
+  var v = document.querySelector('.voice-audio');
+  var chip = document.getElementById('musicChip');
+  var note = chip.querySelector('.music-note');
+  var cb = chip.getBoundingClientRect();
+  var cs = getComputedStyle(chip);
+  var num = function (x) { return isFinite(x) ? Math.round(x * 1000) / 1000 : null; };
+  var box = function (el) { var b = el.getBoundingClientRect(); return { left: Math.round(b.left), top: Math.round(b.top), right: Math.round(b.right), bottom: Math.round(b.bottom), w: Math.round(b.width), h: Math.round(b.height) }; };
+  var read = function (el) {
+    if (!el) return null;
+    return {
+      src: el.getAttribute('src') || '', cls: el.className, preload: el.preload, autoplay: el.autoplay,
+      loop: el.loop, muted: el.muted, vol: num(el.volume), readyState: el.readyState,
+      paused: el.paused, ended: el.ended, err: el.error ? el.error.code : null,
+      t: num(el.currentTime), dur: num(el.duration),
+      seekable: (function () { try { return el.seekable.length ? num(el.seekable.end(0)) : 0; } catch (e) { return -1; } })(),
+      inBody: el.parentNode === document.body
+    };
+  };
+  var hit = document.elementFromPoint(Math.round(cb.left + cb.width / 2), Math.round(cb.top + cb.height / 2));
+  return {
+    cls: document.body.className,
+    music: read(m), voice: read(v),
+    musicCount: document.querySelectorAll('.music-audio').length,
+    voiceCount: document.querySelectorAll('.voice-audio').length,
+    audioCount: document.querySelectorAll('audio').length,
+    bothPlaying: !!(m && v && !m.paused && !v.paused),
+    chip: {
+      hidden: chip.hidden, display: cs.display, opacity: parseFloat(cs.opacity), pointer: cs.pointerEvents,
+      label: document.getElementById('musicLabel').textContent.trim(),
+      paused: chip.classList.contains('is-paused'),
+      note: note ? getComputedStyle(note).animationName : 'none',
+      rect: { left: Math.round(cb.left), top: Math.round(cb.top), right: Math.round(cb.right), bottom: Math.round(cb.bottom), w: Math.round(cb.width), h: Math.round(cb.height) }
+    },
+    envTitle: box(document.querySelector('.env-title')),
+    card: box(document.getElementById('letterCard')),
+    player: box(document.getElementById('voicePlayer')),
+    chipHit: hit ? (hit.id || hit.tagName) : null,
+    overflowX: document.documentElement.scrollWidth > window.innerWidth,
+    scrollW: document.documentElement.scrollWidth,
+    vw: window.innerWidth, vh: window.innerHeight
+  };
+})())`;
 
 function reporter() {
   const rows = [];
@@ -748,9 +797,9 @@ async function suiteVoice(ctx) {
   check("the progress bar is a labelled progressbar", v.barRole === "progressbar" && !!v.barName && v.pct === "0", v.barRole + ", " + JSON.stringify(v.barName) + ", now " + v.pct);
   check("the visualizer is still until she taps", v.barsAnim === "none" && v.isPlaying === false, "animation " + v.barsAnim);
   check("the visualizer is decoration only", v.barsHidden === "true", "aria-hidden = " + v.barsHidden);
-  check("one attached audio element, never autoplaying",
-    v.audioCount === 1 && !!v.audio && v.audio.attached === true && v.audio.paused === true && v.audio.autoplay === false && v.audio.loop === false,
-    v.audioCount + " element(s), " + JSON.stringify(v.audio && [v.audio.paused, v.audio.autoplay, v.audio.loop, v.audio.preload]));
+  check("one attached voice element plus one separate music element, never autoplaying",
+    v.audioCount === 2 && v.voiceCount === 1 && v.musicCount === 1 && !!v.audio && v.audio.attached === true && v.audio.paused === true && v.audio.autoplay === false && v.audio.loop === false,
+    v.audioCount + " element(s) = " + v.voiceCount + " voice + " + v.musicCount + " music, " + JSON.stringify(v.audio && [v.audio.paused, v.audio.autoplay, v.audio.loop, v.audio.preload]));
   check("the length of the message is known up front", !!v.audio && v.audio.dur > 1 && v.audio.dur < 3600 && v.audio.seekable > 0,
     "duration " + (v.audio && v.audio.dur) + "s, seekable " + (v.audio && v.audio.seekable));
   check("the total time renders before playing", /^\d+:\d\d$/.test(v.total) && v.now === "0:00", v.now + " / " + v.total);
@@ -811,7 +860,7 @@ async function suiteVoice(ctx) {
   await ctx.shot("state-voice-letter.png");
 
   /* ---- the end of the message (seek near the tail, then let the real 'ended' fire) ---- */
-  await ev("(function(){var a=document.querySelector('audio');a.currentTime=Math.max(0,a.duration-0.4);})()");
+  await ev("(function(){var a=document.querySelector('.voice-audio');a.currentTime=Math.max(0,a.duration-0.4);})()");
   await sleep(1600);
   const ve = JSON.parse(await ev(PROBE_VOICE));
   check("the message ends on its own", ve.audio.ended === true && ve.audio.paused === true, "ended " + ve.audio.ended + " at " + ve.audio.t + "s");
@@ -831,13 +880,15 @@ async function suiteVoice(ctx) {
   await sleep(1100);
   const vc = JSON.parse(await ev(PROBE_VOICE));
   check("closing the surprise stops the message", vc.audio.paused === true, "paused " + vc.audio.paused + ", t " + vc.audio.t);
-  check("closing leaves just the one audio element", vc.audioCount === 1 && vc.audio.attached === true, vc.audioCount + " element(s), attached " + vc.audio.attached);
+  check("closing leaves exactly one voice element and one music element",
+    vc.audioCount === 2 && vc.voiceCount === 1 && vc.musicCount === 1 && vc.audio.attached === true,
+    vc.audioCount + " element(s) = " + vc.voiceCount + " voice + " + vc.musicCount + " music, attached " + vc.audio.attached);
   await ev("document.getElementById('replay').click()");
   await sleep(1300);
   const vo = JSON.parse(await ev(PROBE_VOICE));
   check("reopening reuses the same player and does not restart it",
-    vo.audioCount === 1 && vo.opacity > .9 && vo.audio.paused === true && vo.label === V.pausedLabel,
-    vo.audioCount + " element(s), paused " + vo.audio.paused + ", label " + JSON.stringify(vo.label));
+    vo.audioCount === 2 && vo.voiceCount === 1 && vo.musicCount === 1 && vo.opacity > .9 && vo.audio.paused === true && vo.label === V.pausedLabel,
+    vo.audioCount + " element(s) = " + vo.voiceCount + " voice + " + vo.musicCount + " music, paused " + vo.audio.paused + ", label " + JSON.stringify(vo.label));
 
   /* ---- phone (390x844) ---- */
   await ctx.go(390, 844, 2, true);
@@ -888,7 +939,7 @@ async function suiteVoice(ctx) {
   await sleep(4300);
   await ev("document.getElementById('replay').click()");
   await sleep(1600);
-  await ev("document.querySelector('audio').dispatchEvent(new Event('error'))");
+  await ev("document.querySelector('.voice-audio').dispatchEvent(new Event('error'))");
   await sleep(350);
   const vx = JSON.parse(await ev(PROBE_VOICE));
   check("a missing file shows the gentle note", vx.isMissing === true && vx.status === V.statusMissing, JSON.stringify(vx.status));
@@ -923,6 +974,232 @@ async function suiteVoice(ctx) {
   await ctx.shot("state-voice-reduced.png");
   await send("Emulation.setEmulatedMedia", { features: [] });
   return { envelope: v, playing: p1, paused: pz, resumed: pr, letter: vt, ended: ve, replay: vr, phone: vm, small: vs, missing: vx, reduced: vrp };
+}
+
+/* ============================== suite: music ============================== */
+/* The background music: config + file on disk, nothing before the flower tap, the tap starts it,
+   it plays over the envelope and the letter, it steps aside at the exact second for Ken's voice
+   message, comes back at that same second when the message ends (never from 0), loops instead of
+   stopping, survives a second VM run, never plays at the same time as the voice, and stays quiet
+   and kind when the mp3 is missing. */
+async function suiteMusic(ctx) {
+  const { send, ev, check, tap } = ctx;
+  await ctx.go(1280, 900, 1, false);
+  await ctx.navigate(1800);
+
+  /* ---- the destination + the file itself (checked on disk, not just in the DOM) ---- */
+  const CFG = JSON.parse(await ev("JSON.stringify(window.LETTER)"));
+  const M = CFG.music || {};
+  const src = await ev("typeof window.BACKGROUND_MUSIC === 'string' ? window.BACKGROUND_MUSIC : null");
+  check("the background music has one named destination", typeof src === "string" && /\/background-music\.mp3$/i.test(src), JSON.stringify(src));
+  const abs = src ? path.resolve(HERE, src) : path.join(HERE, "public/audio/background-music.mp3");
+  const bytes = fss.existsSync(abs) ? fss.statSync(abs).size : 0;
+  check("that file exists where the config points", bytes > 4096, bytes + " bytes at " + path.relative(HERE, abs));
+  const vol = await ev("Number(window.BACKGROUND_MUSIC_VOLUME)");
+  check("the volume is soft by default", isFinite(vol) && vol >= .2 && vol <= .3, "BACKGROUND_MUSIC_VOLUME = " + vol);
+  check("both corner labels come from the config",
+    typeof M.playingLabel === "string" && M.playingLabel.length > 0 && typeof M.pausedLabel === "string" && M.pausedLabel.length > 0,
+    JSON.stringify(M));
+
+  /* ---- before the tap: two separate elements, both silent, the note hidden ---- */
+  const pre = JSON.parse(await ev(PROBE_MUSIC));
+  check("two separate audio elements, one per source",
+    pre.audioCount === 2 && pre.musicCount === 1 && pre.voiceCount === 1 && !!pre.music && !!pre.voice && pre.music.src !== pre.voice.src,
+    pre.audioCount + " element(s): music " + JSON.stringify(pre.music && pre.music.src) + " vs voice " + JSON.stringify(pre.voice && pre.voice.src));
+  check("nothing plays before the flower is tapped",
+    !!pre.music && pre.music.paused === true && pre.music.autoplay === false && pre.music.t === 0 && pre.voice.paused === true,
+    "music paused " + (pre.music && pre.music.paused) + ", autoplay " + (pre.music && pre.music.autoplay) + ", t " + (pre.music && pre.music.t));
+  check("the music is built to loop at the soft volume", pre.music.loop === true && pre.music.vol === vol, "loop " + pre.music.loop + ", volume " + pre.music.vol);
+  check("the music file really decodes", pre.music.dur > 1 && pre.music.seekable > 0 && pre.music.err === null,
+    "duration " + pre.music.dur + "s, seekable " + pre.music.seekable + ", error " + pre.music.err);
+  check("the corner note is hidden until she taps the flower", pre.chip.hidden === true && pre.chip.display === "none", "hidden " + pre.chip.hidden);
+  await ctx.shot("state-music-idle.png");
+
+  /* ---- the tap that blooms the flower is the tap that starts the song ---- */
+  await tap("#bloom");
+  await sleep(900);
+  const on = JSON.parse(await ev(PROBE_MUSIC));
+  check("tapping the flower starts the music", !!on.music && on.music.paused === false && on.music.err === null,
+    "paused " + (on.music && on.music.paused) + ", error " + (on.music && on.music.err));
+  check("it plays at exactly the soft volume", on.music.vol === vol, "volume " + on.music.vol);
+  check("the corner note appears and says Music playing", on.chip.hidden === false && on.chip.label === M.playingLabel && on.chip.paused === false,
+    JSON.stringify(on.chip.label) + ", hidden " + on.chip.hidden);
+  check("the note never eats a tap", on.chip.pointer === "none" && on.chipHit !== "musicChip", "top element at the note = " + on.chipHit);
+  await ctx.shot("state-music-blooming.png");
+
+  await sleep(3300);   /* 900 + 3300 clears the 3.4s bloom before "Bloom Again" is meaningful */
+  const grown = JSON.parse(await ev(PROBE_MUSIC));
+  check("the song really advances", grown.music.t > on.music.t + 1.5, on.music.t + " -> " + grown.music.t + "s");
+  check("the flower finished blooming with the song playing", /\bbloomed\b/.test(grown.cls) && grown.music.paused === false,
+    "body class = " + grown.cls + ", music t = " + grown.music.t);
+
+  /* ---- the envelope screen: the song simply carries on ---- */
+  await ev("document.getElementById('replay').click()");
+  await sleep(1700);
+  const env = JSON.parse(await ev(PROBE_MUSIC));
+  check("the envelope opens with the music still playing", /\benvelope\b/.test(env.cls) && env.music.paused === false,
+    "body class = " + env.cls + ", music paused " + env.music.paused);
+  check("the note sits inside the viewport", env.chip.rect.left >= 0 && env.chip.rect.top >= 0 && env.chip.rect.right <= env.vw && env.chip.rect.bottom <= env.vh,
+    JSON.stringify(env.chip.rect) + " inside " + env.vw + "x" + env.vh);
+  check("the note never lands on the envelope title",
+    env.chip.rect.bottom <= env.envTitle.top || env.chip.rect.right <= env.envTitle.left || env.chip.rect.left >= env.envTitle.right,
+    "note " + JSON.stringify(env.chip.rect) + " vs title top " + env.envTitle.top);
+  await ctx.shot("state-music-envelope.png");
+
+  /* ---- Ken's voice message takes the stage: the song holds its exact second ---- */
+  const mark = (JSON.parse(await ev(PROBE_MUSIC))).music.t;
+  await tap("#voiceBtn");
+  await sleep(700);
+  const duck = JSON.parse(await ev(PROBE_MUSIC));
+  check("pressing the VM pauses the music", duck.music.paused === true && duck.voice.paused === false,
+    "music paused " + duck.music.paused + ", voice playing at " + duck.voice.t + "s");
+  check("the song is frozen at the second it had reached", Math.abs(duck.music.t - mark) < .4, mark + " -> " + duck.music.t + "s");
+  check("music and voice are never heard together", duck.bothPlaying === false, "bothPlaying " + duck.bothPlaying);
+  check("the note owns up to the pause", duck.chip.hidden === false && duck.chip.label === M.pausedLabel && duck.chip.paused === true,
+    JSON.stringify(duck.chip.label));
+  await ctx.shot("state-music-paused.png");
+
+  await sleep(1400);
+  const duck2 = JSON.parse(await ev(PROBE_MUSIC));
+  check("the song does not creep forward while Ken talks", duck2.music.paused === true && Math.abs(duck2.music.t - duck.music.t) < .3,
+    duck.music.t + " -> " + duck2.music.t + "s");
+  check("Ken's message is the only thing playing", duck2.voice.paused === false && duck2.bothPlaying === false, "voice t = " + duck2.voice.t + "s");
+
+  /* ---- pausing the VM by hand must leave the music paused too ---- */
+  await tap("#voiceBtn");
+  await sleep(500);
+  const vp = JSON.parse(await ev(PROBE_MUSIC));
+  check("the VM pauses by hand", vp.voice.paused === true && vp.voice.t > .2, "voice paused " + vp.voice.paused + " at " + vp.voice.t + "s");
+  check("the music stays paused while the VM is paused", vp.music.paused === true, "music paused " + vp.music.paused);
+  await sleep(800);
+  const vp2 = JSON.parse(await ev(PROBE_MUSIC));
+  check("the song still has not moved", Math.abs(vp2.music.t - vp.music.t) < .3, vp.music.t + " -> " + vp2.music.t + "s");
+
+  /* ---- resume the VM: the music is still waiting ---- */
+  await tap("#voiceBtn");
+  await sleep(800);
+  const vr = JSON.parse(await ev(PROBE_MUSIC));
+  check("resuming the VM does not wake the music", vr.voice.paused === false && vr.music.paused === true,
+    "voice paused " + vr.voice.paused + ", music paused " + vr.music.paused);
+  check("still never together", vr.bothPlaying === false, "bothPlaying " + vr.bothPlaying);
+
+  /* ---- the message ends: the music comes back at that same second, never from 0 ---- */
+  await ev("(function(){var a=document.querySelector('.voice-audio');a.currentTime=Math.max(0,a.duration-0.4);})()");
+  await sleep(1800);
+  const back = JSON.parse(await ev(PROBE_MUSIC));
+  check("the message ended", back.voice.ended === true && back.voice.paused === true, "ended " + back.voice.ended + " at " + back.voice.t + "s");
+  check("the music resumes when the message ends", back.music.paused === false, "music paused " + back.music.paused);
+  check("it resumes from where it stopped, not from the top", back.music.t > 1 && back.music.t >= mark - .6,
+    "stopped at " + mark + "s, resumed at " + back.music.t + "s");
+  check("the soft volume comes back", back.music.vol === vol, "volume " + back.music.vol);
+  check("the note says the music is playing again", back.chip.label === M.playingLabel && back.chip.paused === false, JSON.stringify(back.chip.label));
+  check("again: never both playing", back.bothPlaying === false, "bothPlaying " + back.bothPlaying);
+  await ctx.shot("state-music-resumed.png");
+
+  /* ---- a second VM run: the message starts over, the song still picks up where it stood ---- */
+  await sleep(600);
+  const mark2 = (JSON.parse(await ev(PROBE_MUSIC))).music.t;
+  await tap("#voiceBtn");
+  await sleep(800);
+  const second = JSON.parse(await ev(PROBE_MUSIC));
+  check("a second VM run replays the message from the top", second.voice.paused === false && second.voice.t < back.voice.t - 1,
+    back.voice.t + " -> " + second.voice.t + "s");
+  check("and pauses the music again at its own second", second.music.paused === true && Math.abs(second.music.t - mark2) < .5,
+    "music at " + second.music.t + "s (was " + mark2 + "s)");
+  await ev("(function(){var a=document.querySelector('.voice-audio');a.currentTime=Math.max(0,a.duration-0.4);})()");
+  await sleep(1800);
+  const third = JSON.parse(await ev(PROBE_MUSIC));
+  check("the music comes back a second time, from the newer position", third.music.paused === false && third.music.t >= mark2 - .6,
+    "stopped at " + mark2 + "s, resumed at " + third.music.t + "s");
+  check("the note is honest after the second run", third.chip.label === M.playingLabel && third.bothPlaying === false, JSON.stringify(third.chip.label));
+
+  /* ---- looping: the song reaches the end and carries on by itself ---- */
+  await ev("(function(){var m=document.querySelector('.music-audio');m.currentTime=Math.max(0,m.duration-0.35);})()");
+  await sleep(1400);
+  const loop = JSON.parse(await ev(PROBE_MUSIC));
+  check("the song loops instead of stopping", loop.music.paused === false && loop.music.ended === false && loop.music.loop === true,
+    "paused " + loop.music.paused + ", ended " + loop.music.ended + ", loop " + loop.music.loop);
+  check("it really came round again", loop.music.t < loop.music.dur - 1, "wrapped to " + loop.music.t + "s of " + loop.music.dur + "s");
+
+  /* ---- the letter screen: the song plays on under the paper ---- */
+  await ev("document.getElementById('envelope').click()");
+  await sleep(2400);
+  const letter = JSON.parse(await ev(PROBE_MUSIC));
+  check("the letter view is reached with the music playing", /\bletter\b/.test(letter.cls) && letter.music.paused === false,
+    "body class = " + letter.cls + ", music paused " + letter.music.paused);
+  check("the note stays clear of the letter card",
+    letter.chip.rect.bottom <= letter.card.top || letter.chip.rect.right <= letter.card.left || letter.chip.rect.left >= letter.card.right,
+    "note " + JSON.stringify(letter.chip.rect) + " vs card top " + letter.card.top);
+  check("the note stays clear of the voice player",
+    letter.chip.rect.bottom <= letter.player.top || letter.chip.rect.right <= letter.player.left || letter.chip.rect.left >= letter.player.right,
+    "note " + JSON.stringify(letter.chip.rect) + " vs player " + JSON.stringify(letter.player));
+  check("no horizontal overflow with the note on screen", letter.overflowX === false, "scrollWidth " + letter.scrollW + " vs " + letter.vw);
+  await ctx.shot("state-music-letter.png");
+
+  /* ---- the song survives closing the surprise, and no duplicate element appears ---- */
+  await ev("document.getElementById('letterClose').click()");
+  await sleep(1200);
+  const closed = JSON.parse(await ev(PROBE_MUSIC));
+  check("closing the surprise leaves the music playing", closed.music.paused === false && closed.voice.paused === true,
+    "music paused " + closed.music.paused + ", voice paused " + closed.voice.paused);
+  check("no second music element appeared", closed.musicCount === 1 && closed.voiceCount === 1 && closed.audioCount === 2,
+    closed.audioCount + " element(s) = " + closed.voiceCount + " voice + " + closed.musicCount + " music");
+  await ev("document.getElementById('bloom').click()");
+  await sleep(500);
+  const again = JSON.parse(await ev(PROBE_MUSIC));
+  check("a second flower tap changes nothing in the audio", again.musicCount === 1 && again.audioCount === 2 && again.music.paused === false,
+    again.audioCount + " elements, music paused " + again.music.paused);
+
+  /* ---- phone (390x844): the note fits, stays small, and blocks nothing ---- */
+  await ctx.go(390, 844, 2, true);
+  await sleep(900);
+  const phone = JSON.parse(await ev(PROBE_MUSIC));
+  check("the note fits a 390px phone", phone.chip.rect.left >= 0 && phone.chip.rect.right <= phone.vw && phone.chip.rect.bottom <= phone.vh,
+    JSON.stringify(phone.chip.rect) + " inside " + phone.vw + "x" + phone.vh);
+  check("the note stays small on a phone", phone.chip.rect.w <= Math.round(phone.vw * .5) && phone.chip.rect.h <= 40, phone.chip.rect.w + "x" + phone.chip.rect.h + "px");
+  check("no horizontal overflow on a phone", phone.overflowX === false, "scrollWidth " + phone.scrollW + " vs " + phone.vw);
+  check("the music still plays on a phone", phone.music.paused === false, "music paused " + phone.music.paused);
+  await ctx.shot("state-music-mobile.png");
+
+  /* ---- a missing music file: quiet, kind, and Ken's message still works ---- */
+  await ctx.go(1280, 900, 1, false);
+  await ctx.navigate(1800);
+  await ev("document.querySelector('.music-audio').dispatchEvent(new Event('error'))");
+  await sleep(350);
+  const gone = JSON.parse(await ev(PROBE_MUSIC));
+  check("a missing music file hides the note", gone.chip.hidden === true, "hidden " + gone.chip.hidden);
+  await tap("#bloom");
+  await sleep(900);
+  const gone2 = JSON.parse(await ev(PROBE_MUSIC));
+  check("the flower still blooms without any music", /\bbloomed\b/.test(gone2.cls) && gone2.chip.hidden === true && gone2.music.paused === true,
+    "body class = " + gone2.cls + ", music paused " + gone2.music.paused);
+  await sleep(3300);                       /* the bloom takes 3.4s: "Bloom Again" is ignored before that */
+  await ev("document.getElementById('replay').click()");
+  await sleep(1700);
+  const gone2b = JSON.parse(await ev(PROBE_MUSIC));
+  check("the envelope is on screen before the VM is tapped", /\benvelope\b/.test(gone2b.cls) && gone2b.player.h > 0,
+    "body class = " + gone2b.cls + ", player " + gone2b.player.w + "x" + gone2b.player.h);
+  await tap("#voiceBtn");
+  await sleep(800);
+  const gone3 = JSON.parse(await ev(PROBE_MUSIC));
+  check("the voice message still plays on its own", gone3.voice.paused === false && gone3.music.paused === true,
+    "voice paused " + gone3.voice.paused + " (t " + gone3.voice.t + "s of " + gone3.voice.dur + "), music paused " + gone3.music.paused);
+  check("nothing overlaps even when the music is gone", gone3.bothPlaying === false, "bothPlaying " + gone3.bothPlaying);
+  await tap("#voiceBtn");
+  await sleep(400);
+
+  /* ---- reduced motion: the note calms down, the sound does not ---- */
+  await send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: "reduce" }] });
+  await ctx.go(1280, 900, 1, false);
+  await ctx.navigate(1800);
+  await tap("#bloom");
+  await sleep(1200);
+  const calm = JSON.parse(await ev(PROBE_MUSIC));
+  check("reduced motion still starts the music", calm.music.paused === false && calm.chip.hidden === false, "paused " + calm.music.paused + ", hidden " + calm.chip.hidden);
+  check("reduced motion stops the note bouncing", calm.chip.note === "none", "animation " + calm.chip.note);
+  await send("Emulation.setEmulatedMedia", { features: [] });
+
+  return { idle: pre, blooming: on, envelope: env, paused: duck, vmPaused: vp, vmResumed: vr, resumed: back, second, third, loop, letter, closed, phone, missing: gone, reduced: calm };
 }
 
 /* ============================== suite: sizes ============================== */
@@ -1015,6 +1292,7 @@ async function main() {
       else if (s === "zoom") await suiteZoom(ctx);
       else if (s === "surprise") await suiteSurprise(ctx);
       else if (s === "voice") await suiteVoice(ctx);
+      else if (s === "music") await suiteMusic(ctx);
       else await suiteSizes(ctx);
       console.log("   (" + ((Date.now() - t0) / 1000).toFixed(1) + "s)\n");
     }
